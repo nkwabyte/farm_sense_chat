@@ -1,16 +1,30 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { PdfUploader } from '@/components/pdf-uploader';
 import { ChatInterface } from '@/components/chat-interface';
+import { ChatInput } from '@/components/chat-input';
+import { ChatMessage, ChatMessageLoading } from '@/components/chat-message';
+
+type Message = {
+    role: 'user' | 'assistant';
+    content: string;
+    source?: string;
+    id: number;
+};
+
 
 export default function AgriChatPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,7 +55,23 @@ export default function AgriChatPage() {
   const handleReset = useCallback(() => {
     setPdfFile(null);
     setPdfDataUri(null);
+    setMessages([]);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
   }, []);
+
+  const handleSendMessage = async (message: string) => {
+    if (!pdfFile || !pdfDataUri) {
+        toast({
+            title: "PDF required",
+            description: "Please upload a PDF document to start chatting.",
+        });
+        return;
+    }
+  };
+
+  const showUploader = !pdfDataUri || !pdfFile;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -54,16 +84,23 @@ export default function AgriChatPage() {
           <Button variant="outline" onClick={handleReset}>Upload New PDF</Button>
         )}
       </header>
-
-      <main className="flex-1 overflow-hidden">
-        {!pdfDataUri || !pdfFile ? (
-          <div className="flex items-center justify-center h-full p-8">
-            <PdfUploader onFileChange={handleFileChange} />
-          </div>
-        ) : (
-          <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} />
-        )}
-      </main>
+      
+      {showUploader ? (
+        <div className="flex-1 overflow-hidden">
+             <div className="flex flex-col h-full">
+                <div className="flex-1 p-6 overflow-y-auto">
+                    <div className="flex flex-col max-w-4xl gap-6 mx-auto">
+                        <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
+                    </div>
+                </div>
+                <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
+                    <ChatInput onSendMessage={handleSendMessage} isLoading={false} />
+                </div>
+            </div>
+        </div>
+      ) : (
+        <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} />
+      )}
     </div>
   );
 }

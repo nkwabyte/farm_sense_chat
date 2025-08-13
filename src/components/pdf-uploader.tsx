@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent } from 'react';
+import { type ChangeEvent, forwardRef } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ type PdfUploaderProps = {
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function PdfUploader({ onFileChange }: PdfUploaderProps) {
+export const PdfUploader = forwardRef<HTMLInputElement, PdfUploaderProps>(({ onFileChange }, ref) => {
     const fileInputId = "pdf-upload";
     return (
         <div className="flex flex-col items-center justify-center w-full max-w-lg p-8 mx-auto text-center border-2 border-dashed rounded-lg shadow-sm border-muted-foreground/20 bg-card">
@@ -24,7 +24,9 @@ export function PdfUploader({ onFileChange }: PdfUploaderProps) {
                     Select PDF
                 </Label>
             </Button>
-            <Input id={fileInputId} type="file" accept="application/pdf" className="sr-only" onChange={onFileChange} />
+            <Input id={fileInputId} type="file" accept="application/pdf" className="sr-only" onChange={onFileChange} ref={ref} />
         </div>
     );
-}
+});
+
+PdfUploader.displayName = 'PdfUploader';
