@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { Leaf, MessageSquare, FileText } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect, ChangeEvent } from 'react';
+import { Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { PdfUploader } from '@/components/pdf-uploader';
-import { ChatInterface } from '@/components/chat-interface';
+import { ChatInterface, type Message } from '@/components/chat-interface';
 import { ChatInput } from '@/components/chat-input';
 import { OptionSelector } from '@/components/option-selector';
 import { FarmerReport } from '@/components/farmer-report';
+import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
+import { type FormatFarmerReportOutput } from '@/ai/flows/format-farmer-report';
 
 export default function AgriChatPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
   const [view, setView] = useState<'uploader' | 'options' | 'chat' | 'report'>('uploader');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,6 +30,7 @@ export default function AgriChatPage() {
         const dataUri = e.target?.result as string;
         setPdfFile(file);
         setPdfDataUri(dataUri);
+        setMessages([]);
         setView('options');
       };
       reader.onerror = () => {
@@ -48,6 +53,7 @@ export default function AgriChatPage() {
   const handleReset = useCallback(() => {
     setPdfFile(null);
     setPdfDataUri(null);
+    setMessages([]);
     setView('uploader');
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -57,36 +63,104 @@ export default function AgriChatPage() {
   const handleSendMessage = async (message: string) => {
     if (!pdfFile || !pdfDataUri) {
         toast({
+            variant: "destructive",
             title: "Document required",
             description: "Please upload a PDF or DOCX document to start chatting.",
         });
         return;
     }
+
+    const userMessage: Message = { role: 'user', content: message, id: Date.now() };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await answerQuestionsFromPdf({
+        question: message,
+        pdfDataUri: pdfDataUri,
+      });
+
+      const aiMessage: Message = {
+        role: 'assistant',
+        content: response.answer,
+        source: response.source.replace('ExamplePDF.pdf', pdfFile.name),
+        id: Date.now(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "AI Error",
+        description: "Could not get a response from the AI. Please try again.",
+      });
+      setMessages(prev => prev.slice(0, -1)); // Remove the optimistic user message on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleReportFormatted = (report: FormatFarmerReportOutput) => {
+    const formattedReportString = `
+**Farm Details**
+${report.farmDetails}
+
+**What We Checked**
+${report.whatWeChecked}
+
+**What We Found**
+${report.whatWeFound}
+
+**What You Should Do**
+${report.whatYouShouldDo}
+
+**Money Matters**
+${report.moneyMatters}
+
+**Extra Tips**
+${report.extraTips}
+    `.trim();
+
+    setMessages([
+      {
+        role: 'assistant',
+        content: formattedReportString,
+        id: Date.now(),
+        isReport: true,
+      },
+    ]);
+    setView('chat');
   };
 
   const renderContent = () => {
     switch (view) {
       case 'uploader':
         return (
-          <div className="flex-1 overflow-hidden">
-            <div className="flex flex-col h-full">
-              <div className="flex-1 p-6 overflow-y-auto">
-                <div className="flex flex-col max-w-4xl gap-6 mx-auto">
-                  <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
-                </div>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex flex-col max-w-4xl gap-6 mx-auto">
+                <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
               </div>
-              <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
-                <ChatInput onSendMessage={handleSendMessage} isLoading={false} onFileChange={handleFileChange} />
-              </div>
+            </div>
+            <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
+              <ChatInput onSendMessage={handleSendMessage} isLoading={false} onFileChange={handleFileChange} />
             </div>
           </div>
         );
       case 'options':
         return pdfFile && <OptionSelector onSelect={setView} pdfFileName={pdfFile.name} />;
       case 'chat':
-        return pdfFile && pdfDataUri && <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} onFileChange={handleFileChange} />;
+        return pdfFile && pdfDataUri && (
+          <ChatInterface 
+            pdfFileName={pdfFile.name}
+            messages={messages} 
+            isLoading={isLoading} 
+            onSendMessage={handleSendMessage}
+            onFileChange={handleFileChange} 
+          />
+        );
       case 'report':
-        return pdfFile && <FarmerReport pdfFile={pdfFile} onContinueToChat={() => setView('chat')} />;
+        return pdfFile && <FarmerReport pdfFile={pdfFile} onReportFormatted={handleReportFormatted} />;
       default:
         return null;
     }

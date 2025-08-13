@@ -11,7 +11,7 @@ import { Terminal, MessageSquare } from "lucide-react";
 
 type FarmerReportProps = {
     pdfFile: File;
-    onContinueToChat: () => void;
+    onReportFormatted: (report: FormatFarmerReportOutput) => void;
 };
 
 async function extractTextFromDataUri(dataUri: string): Promise<string> {
@@ -29,7 +29,7 @@ async function extractTextFromDataUri(dataUri: string): Promise<string> {
     });
 }
 
-export function FarmerReport({ pdfFile, onContinueToChat }: FarmerReportProps) {
+export function FarmerReport({ pdfFile, onReportFormatted }: FarmerReportProps) {
     const [report, setReport] = useState<FormatFarmerReportOutput | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -86,6 +86,12 @@ export function FarmerReport({ pdfFile, onContinueToChat }: FarmerReportProps) {
         generateReport();
     }, [pdfFile, toast]);
 
+    const handleContinue = () => {
+        if (report) {
+            onReportFormatted(report);
+        }
+    }
+
     const renderSkeleton = () => (
         <div className="space-y-6">
             <div className="space-y-2">
@@ -135,7 +141,7 @@ export function FarmerReport({ pdfFile, onContinueToChat }: FarmerReportProps) {
                     </CardContent>
                     {report && !isLoading && !error && (
                         <CardFooter className="justify-end pt-6 border-t">
-                             <Button onClick={onContinueToChat}>
+                             <Button onClick={handleContinue}>
                                 <MessageSquare className="w-5 h-5 mr-2" />
                                 Continue to Chat
                             </Button>

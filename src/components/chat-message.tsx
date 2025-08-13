@@ -2,17 +2,36 @@
 
 import { Bot, User, FileText, LoaderCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type ChatMessageProps = {
     role: 'user' | 'assistant';
     content: string;
     source?: string;
+    isReport?: boolean;
 };
 
-export function ChatMessage({ role, content, source }: ChatMessageProps) {
+export function ChatMessage({ role, content, source, isReport }: ChatMessageProps) {
     const isUser = role === 'user';
+
+    const renderContent = () => {
+        if (!isReport) {
+            return <p className="whitespace-pre-wrap">{content}</p>;
+        }
+
+        const sections = content.split('\n\n');
+        return sections.map((section, index) => {
+            const [title, ...body] = section.split('\n');
+            return (
+                <div key={index} className="mb-4 last:mb-0">
+                    <h4 className="font-bold">{title.replace(/\*\*/g, '')}</h4>
+                    <p className="whitespace-pre-wrap">{body.join('\n')}</p>
+                </div>
+            );
+        });
+    };
+
     return (
         <div className={cn('flex items-start gap-4 animate-in fade-in', isUser ? 'justify-end' : '')}>
             {!isUser && (
@@ -24,8 +43,13 @@ export function ChatMessage({ role, content, source }: ChatMessageProps) {
             )}
             <div className={cn('max-w-2xl', isUser ? 'text-right' : '')}>
                 <Card className={cn('shadow-sm', isUser ? 'bg-primary text-primary-foreground' : 'bg-card')}>
+                    {isReport && !isUser && (
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-xl">Farmer-Friendly Report</CardTitle>
+                        </CardHeader>
+                    )}
                     <CardContent className="p-4">
-                        <p className="whitespace-pre-wrap">{content}</p>
+                        {renderContent()}
                     </CardContent>
                     {!isUser && source && (
                         <CardFooter className="flex items-center gap-2 p-2 pt-0 text-xs border-t text-muted-foreground">
