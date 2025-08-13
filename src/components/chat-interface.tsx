@@ -26,7 +26,7 @@ export const ChatInterface = memo(function ChatInterface({ pdfFileName, messages
 
     useEffect(() => {
         if (!hasInitialized.current && messages.length === 0) {
-            onSendMessage(`I've analyzed "${pdfFileName}". Ask me anything about its content.`);
+            onSendMessage(`I've analyzed "${pdfFileName}". What would you like to do with this document?`);
             hasInitialized.current = true;
         }
     }, [pdfFileName, messages, onSendMessage]);
