@@ -1,30 +1,22 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Leaf } from 'lucide-react';
+import { Leaf, MessageSquare, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { PdfUploader } from '@/components/pdf-uploader';
 import { ChatInterface } from '@/components/chat-interface';
 import { ChatInput } from '@/components/chat-input';
-import { ChatMessage, ChatMessageLoading } from '@/components/chat-message';
-
-type Message = {
-    role: 'user' | 'assistant';
-    content: string;
-    source?: string;
-    id: number;
-};
-
+import { OptionSelector } from '@/components/option-selector';
+import { FarmerReport } from '@/components/farmer-report';
 
 export default function AgriChatPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
+  const [view, setView] = useState<'uploader' | 'options' | 'chat' | 'report'>('uploader');
+
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -34,6 +26,7 @@ export default function AgriChatPage() {
         const dataUri = e.target?.result as string;
         setPdfFile(file);
         setPdfDataUri(dataUri);
+        setView('options');
       };
       reader.onerror = () => {
         toast({
@@ -55,7 +48,7 @@ export default function AgriChatPage() {
   const handleReset = useCallback(() => {
     setPdfFile(null);
     setPdfDataUri(null);
-    setMessages([]);
+    setView('uploader');
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -71,7 +64,33 @@ export default function AgriChatPage() {
     }
   };
 
-  const showUploader = !pdfDataUri || !pdfFile;
+  const renderContent = () => {
+    switch (view) {
+      case 'uploader':
+        return (
+          <div className="flex-1 overflow-hidden">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex flex-col max-w-4xl gap-6 mx-auto">
+                  <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
+                </div>
+              </div>
+              <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
+                <ChatInput onSendMessage={handleSendMessage} isLoading={false} />
+              </div>
+            </div>
+          </div>
+        );
+      case 'options':
+        return pdfFile && <OptionSelector onSelect={setView} pdfFileName={pdfFile.name} />;
+      case 'chat':
+        return pdfFile && pdfDataUri && <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} />;
+      case 'report':
+        return pdfFile && <FarmerReport pdfFile={pdfFile} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -85,22 +104,7 @@ export default function AgriChatPage() {
         )}
       </header>
       
-      {showUploader ? (
-        <div className="flex-1 overflow-hidden">
-             <div className="flex flex-col h-full">
-                <div className="flex-1 p-6 overflow-y-auto">
-                    <div className="flex flex-col max-w-4xl gap-6 mx-auto">
-                        <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
-                    </div>
-                </div>
-                <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
-                    <ChatInput onSendMessage={handleSendMessage} isLoading={false} />
-                </div>
-            </div>
-        </div>
-      ) : (
-        <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} />
-      )}
+      {renderContent()}
     </div>
   );
 }
