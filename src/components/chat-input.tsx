@@ -8,7 +8,7 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 
 type ChatInputProps = {
-    onSendMessage: (message: string) => Promise<void>;
+    onSendMessage: (message: string, isUserMessage?: boolean) => Promise<void>;
     isLoading: boolean;
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
@@ -34,7 +34,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange }: ChatInputP
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto';
             }
-            await onSendMessage(currentMessage);
+            await onSendMessage(currentMessage, true);
         }
     };
     

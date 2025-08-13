@@ -60,7 +60,7 @@ export default function AgriChatPage() {
     }
   }, []);
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, isUserMessage: boolean = true) => {
     if (!pdfFile || !pdfDataUri) {
         toast({
             variant: "destructive",
@@ -70,8 +70,11 @@ export default function AgriChatPage() {
         return;
     }
 
-    const userMessage: Message = { role: 'user', content: message, id: Date.now() };
-    setMessages((prev) => [...prev, userMessage]);
+    if (isUserMessage) {
+        const userMessage: Message = { role: 'user', content: message, id: Date.now() };
+        setMessages((prev) => [...prev, userMessage]);
+    }
+    
     setIsLoading(true);
 
     try {
@@ -94,7 +97,9 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
-      setMessages(prev => prev.slice(0, -1)); // Remove the optimistic user message on error
+      if(isUserMessage) {
+        setMessages(prev => prev.slice(0, -1)); // Remove the optimistic user message on error
+      }
     } finally {
       setIsLoading(false);
     }
