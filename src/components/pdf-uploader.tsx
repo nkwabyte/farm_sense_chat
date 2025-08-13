@@ -17,14 +17,14 @@ export const PdfUploader = forwardRef<HTMLInputElement, PdfUploaderProps>(({ onF
             <div className="p-4 rounded-full bg-accent/20">
               <UploadCloud className="w-12 h-12 text-accent" data-ai-hint="upload icon" />
             </div>
-            <h2 className="mt-6 text-2xl font-semibold font-headline">Upload your Agriculture PDF</h2>
+            <h2 className="mt-6 text-2xl font-semibold font-headline">Upload your Agriculture Document</h2>
             <p className="mt-2 text-muted-foreground">The AI will answer questions based on its content.</p>
             <Button asChild className="mt-6">
                 <Label htmlFor={fileInputId} className="cursor-pointer">
-                    Select PDF
+                    Select PDF or DOCX
                 </Label>
             </Button>
-            <Input id={fileInputId} type="file" accept="application/pdf" className="sr-only" onChange={onFileChange} ref={ref} />
+            <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} ref={ref} />
         </div>
     );
 });

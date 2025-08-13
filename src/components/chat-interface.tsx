@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, ChangeEvent } from 'react';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, ChatMessageLoading } from '@/components/chat-message';
@@ -16,9 +16,10 @@ type Message = {
 type ChatInterfaceProps = {
     pdfFile: File;
     pdfDataUri: string;
+    onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function ChatInterface({ pdfFile, pdfDataUri }: ChatInterfaceProps) {
+export function ChatInterface({ pdfFile, pdfDataUri, onFileChange }: ChatInterfaceProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -82,7 +83,7 @@ export function ChatInterface({ pdfFile, pdfDataUri }: ChatInterfaceProps) {
                 </div>
             </div>
             <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
-                <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+                <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} onFileChange={onFileChange} />
             </div>
         </div>
     );

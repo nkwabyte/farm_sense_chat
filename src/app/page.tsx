@@ -20,7 +20,7 @@ export default function AgriChatPage() {
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUri = e.target?.result as string;
@@ -32,7 +32,7 @@ export default function AgriChatPage() {
         toast({
             variant: "destructive",
             title: "File Read Error",
-            description: "There was an error reading your PDF file.",
+            description: "There was an error reading your file.",
         });
       };
       reader.readAsDataURL(file);
@@ -40,7 +40,7 @@ export default function AgriChatPage() {
         toast({
             variant: "destructive",
             title: "Invalid File Type",
-            description: "Please upload a valid PDF file.",
+            description: "Please upload a valid PDF or DOCX file.",
         });
     }
   }, [toast]);
@@ -57,8 +57,8 @@ export default function AgriChatPage() {
   const handleSendMessage = async (message: string) => {
     if (!pdfFile || !pdfDataUri) {
         toast({
-            title: "PDF required",
-            description: "Please upload a PDF document to start chatting.",
+            title: "Document required",
+            description: "Please upload a PDF or DOCX document to start chatting.",
         });
         return;
     }
@@ -76,7 +76,7 @@ export default function AgriChatPage() {
                 </div>
               </div>
               <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
-                <ChatInput onSendMessage={handleSendMessage} isLoading={false} />
+                <ChatInput onSendMessage={handleSendMessage} isLoading={false} onFileChange={handleFileChange} />
               </div>
             </div>
           </div>
@@ -84,7 +84,7 @@ export default function AgriChatPage() {
       case 'options':
         return pdfFile && <OptionSelector onSelect={setView} pdfFileName={pdfFile.name} />;
       case 'chat':
-        return pdfFile && pdfDataUri && <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} />;
+        return pdfFile && pdfDataUri && <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} onFileChange={handleFileChange} />;
       case 'report':
         return pdfFile && <FarmerReport pdfFile={pdfFile} />;
       default:
@@ -100,7 +100,7 @@ export default function AgriChatPage() {
           <h1 className="text-2xl font-bold font-headline">AgriChat PDF</h1>
         </div>
         {pdfFile && (
-          <Button variant="outline" onClick={handleReset}>Upload New PDF</Button>
+          <Button variant="outline" onClick={handleReset}>Upload New Document</Button>
         )}
       </header>
       

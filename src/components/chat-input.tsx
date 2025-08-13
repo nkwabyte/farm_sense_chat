@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { SendHorizonal, LoaderCircle } from 'lucide-react';
+import { SendHorizonal, LoaderCircle, Paperclip } from 'lucide-react';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
 
 type ChatInputProps = {
     onSendMessage: (message: string) => Promise<void>;
     isLoading: boolean;
+    onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, onFileChange }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputId = 'chat-file-upload';
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -42,7 +46,14 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex items-start w-full gap-4">
+        <form onSubmit={handleSubmit} className="relative flex items-start w-full gap-2 md:gap-4">
+            <Button asChild variant="ghost" size="icon" className="shrink-0">
+                <Label htmlFor={fileInputId} className="cursor-pointer">
+                    <Paperclip className="w-5 h-5" />
+                    <span className="sr-only">Attach file</span>
+                </Label>
+            </Button>
+            <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} />
             <Textarea
                 ref={textareaRef}
                 value={message}
