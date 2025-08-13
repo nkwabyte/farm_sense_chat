@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect, ChangeEvent } from 'react';
-import { Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { PdfUploader } from '@/components/pdf-uploader';
@@ -175,8 +174,7 @@ ${report.extraTips}
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center">
-          <Leaf className="w-8 h-8 mr-2 text-primary" />
-          <h1 className="text-2xl font-bold font-headline">AgriChat PDF</h1>
+          <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
         </div>
         {pdfFile && (
           <Button variant="outline" onClick={handleReset}>Upload New Document</Button>

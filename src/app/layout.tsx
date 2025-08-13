@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'AgriChat PDF',
+  title: 'FarmSenseChat',
   description: 'Chat with your agricultural PDF documents.',
 };
 
