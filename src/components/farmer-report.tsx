@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { formatFarmerReport, type FormatFarmerReportOutput } from "@/ai/flows/format-farmer-report";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Terminal, MessageSquare } from "lucide-react";
 
 type FarmerReportProps = {
     pdfFile: File;
+    onContinueToChat: () => void;
 };
 
 async function extractTextFromDataUri(dataUri: string): Promise<string> {
@@ -27,7 +29,7 @@ async function extractTextFromDataUri(dataUri: string): Promise<string> {
     });
 }
 
-export function FarmerReport({ pdfFile }: FarmerReportProps) {
+export function FarmerReport({ pdfFile, onContinueToChat }: FarmerReportProps) {
     const [report, setReport] = useState<FormatFarmerReportOutput | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -131,6 +133,14 @@ export function FarmerReport({ pdfFile }: FarmerReportProps) {
                             </div>
                         )}
                     </CardContent>
+                    {report && !isLoading && !error && (
+                        <CardFooter className="justify-end pt-6 border-t">
+                             <Button onClick={onContinueToChat}>
+                                <MessageSquare className="w-5 h-5 mr-2" />
+                                Continue to Chat
+                            </Button>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
         </div>

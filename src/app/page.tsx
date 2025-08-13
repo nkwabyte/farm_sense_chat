@@ -86,7 +86,7 @@ export default function AgriChatPage() {
       case 'chat':
         return pdfFile && pdfDataUri && <ChatInterface pdfFile={pdfFile} pdfDataUri={pdfDataUri} onFileChange={handleFileChange} />;
       case 'report':
-        return pdfFile && <FarmerReport pdfFile={pdfFile} />;
+        return pdfFile && <FarmerReport pdfFile={pdfFile} onContinueToChat={() => setView('chat')} />;
       default:
         return null;
     }
