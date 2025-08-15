@@ -102,7 +102,7 @@ export async function answerQuestionsFromPdf(
   input: AnswerQuestionsFromPdfInput
 ): Promise<AnswerQuestionsFromPdfOutput> {
   const llmResponse = await answerQuestionsFromPdfPrompt(input);
-  const output = llmResponse.output();
+  const output = llmResponse.output;
 
   if (!output) {
     return {
