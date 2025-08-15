@@ -17,7 +17,6 @@ import {
 import { ChatHistory } from '@/components/chat-history';
 import { ChatInterface } from '@/components/chat-interface';
 import { nanoid } from 'nanoid';
-import { EmptyChatScreen } from '@/components/empty-chat-screen';
 
 export type Conversation = {
   id: string;
@@ -122,7 +121,8 @@ export default function AgriChatPage() {
     
     setIsLoading(true);
     
-    const currentConversation = conversations.find(c => c.id === currentChatId) || {
+    // We need to find the conversation *after* it has been updated in the state
+    const getUpdatedConversation = () => conversations.find(c => c.id === currentChatId) || {
         id: currentChatId,
         messages: [userMessage],
         title: message.substring(0,30),
@@ -130,6 +130,7 @@ export default function AgriChatPage() {
 
 
     try {
+      const currentConversation = getUpdatedConversation();
       const response = await answerQuestionsFromPdf({
         question: message,
         pdfDataUri: currentConversation.pdfFile?.dataUri,
@@ -156,7 +157,8 @@ export default function AgriChatPage() {
       // Remove the optimistic user message on error
       setConversations(prev => prev.map(conv => {
           if (conv.id === currentChatId) {
-              return { ...conv, messages: conv.messages.slice(0, -1) };
+              const newMessages = conv.messages.filter(m => m.id !== userMessage.id);
+              return { ...conv, messages: newMessages };
           }
           return conv;
       }));
@@ -204,23 +206,14 @@ export default function AgriChatPage() {
             </SidebarContent>
           </Sidebar>
           <SidebarInset className="max-h-full">
-            {activeConversation ? (
-              <ChatInterface
-                key={activeConversation.id}
-                messages={activeConversation.messages}
-                isLoading={isLoading}
-                onSendMessage={handleSendMessage}
-                onFileChange={handleFileChange}
-                fileInputRef={fileInputRef}
-              />
-            ) : (
-                <EmptyChatScreen 
-                    onSendMessage={handleSendMessage} 
-                    onFileChange={handleFileChange} 
-                    fileInputRef={fileInputRef} 
-                    isLoading={isLoading}
-                />
-            )}
+            <ChatInterface
+              key={activeConversation?.id ?? 'new-chat'}
+              messages={activeConversation?.messages ?? []}
+              isLoading={isLoading}
+              onSendMessage={handleSendMessage}
+              onFileChange={handleFileChange}
+              fileInputRef={fileInputRef}
+            />
           </SidebarInset>
         </div>
       </div>
