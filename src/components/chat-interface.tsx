@@ -13,7 +13,7 @@ export type Message = {
 };
 
 type ChatInterfaceProps = {
-    pdfFileName: string;
+    pdfFileName?: string;
     messages: Message[];
     isLoading: boolean;
     onSendMessage: (message: string, isUserMessage?: boolean) => Promise<void>;
@@ -25,7 +25,7 @@ export const ChatInterface = memo(function ChatInterface({ pdfFileName, messages
     const hasInitialized = useRef(false);
 
     useEffect(() => {
-        if (!hasInitialized.current && messages.length === 0) {
+        if (pdfFileName && !hasInitialized.current && messages.length === 0) {
             onSendMessage(`I've analyzed "${pdfFileName}". What would you like to do with this document?`, false);
             hasInitialized.current = true;
         }

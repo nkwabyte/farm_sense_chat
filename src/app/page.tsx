@@ -14,12 +14,25 @@ import { type FormatFarmerReportOutput } from '@/ai/flows/format-farmer-report';
 export default function AgriChatPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
-  const [view, setView] = useState<'uploader' | 'options' | 'chat' | 'report'>('uploader');
+  const [view, setView] = useState<'chat' | 'uploader' | 'options' | 'report'>('chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Send an initial greeting from the AI when the chat view loads for the first time.
+    if (view === 'chat' && messages.length === 0 && !pdfFile) {
+        const initialMessage: Message = {
+            role: 'assistant',
+            content: "Hello! I'm FarmSenseChat. You can ask me questions about farming, or upload a document to get started.",
+            id: Date.now()
+        };
+        setMessages([initialMessage]);
+    }
+  }, [view, messages.length, pdfFile]);
+
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -29,7 +42,7 @@ export default function AgriChatPage() {
         const dataUri = e.target?.result as string;
         setPdfFile(file);
         setPdfDataUri(dataUri);
-        setMessages([]);
+        setMessages([]); // Clear messages for the new document
         setView('options');
       };
       reader.onerror = () => {
@@ -60,15 +73,6 @@ export default function AgriChatPage() {
   }, []);
 
   const handleSendMessage = async (message: string, isUserMessage: boolean = true) => {
-    if (!pdfFile || !pdfDataUri) {
-        toast({
-            variant: "destructive",
-            title: "Document required",
-            description: "Please upload a PDF or DOCX document to start chatting.",
-        });
-        return;
-    }
-
     if (isUserMessage) {
         const userMessage: Message = { role: 'user', content: message, id: Date.now() };
         setMessages((prev) => [...prev, userMessage]);
@@ -79,13 +83,13 @@ export default function AgriChatPage() {
     try {
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: pdfDataUri,
+        pdfDataUri: pdfDataUri || undefined,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source.replace('ExamplePDF.pdf', pdfFile.name),
+        source: response.source?.replace('ExamplePDF.pdf', pdfFile?.name ?? "General Knowledge"),
         id: Date.now(),
       };
       setMessages((prev) => [...prev, aiMessage]);
@@ -146,17 +150,14 @@ ${report.extraTips}
                 <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
               </div>
             </div>
-            <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm">
-              <ChatInput onSendMessage={handleSendMessage} isLoading={false} onFileChange={handleFileChange} />
-            </div>
           </div>
         );
       case 'options':
         return pdfFile && <OptionSelector onSelect={setView} pdfFileName={pdfFile.name} />;
       case 'chat':
-        return pdfFile && pdfDataUri && (
+        return (
           <ChatInterface 
-            pdfFileName={pdfFile.name}
+            pdfFileName={pdfFile?.name}
             messages={messages} 
             isLoading={isLoading} 
             onSendMessage={handleSendMessage}
@@ -176,8 +177,8 @@ ${report.extraTips}
         <div className="flex items-center">
           <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
         </div>
-        {pdfFile && (
-          <Button variant="outline" onClick={handleReset}>Upload New Document</Button>
+        {view !== 'uploader' && (
+           <Button variant="outline" onClick={() => setView('uploader')}>Upload Document</Button>
         )}
       </header>
       
