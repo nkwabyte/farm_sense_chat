@@ -6,6 +6,7 @@ import { ChatMessage, ChatMessageLoading } from '@/components/chat-message';
 import { ChatInput } from '@/components/chat-input';
 import { SuggestedQuestions } from '@/components/suggested-questions';
 import { PdfUploader } from './pdf-uploader';
+import { FileBubble } from './file-bubble';
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -22,9 +23,12 @@ type ChatInterfaceProps = {
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
     fileInputRef: RefObject<HTMLInputElement>;
     suggestedQuestions: string[];
+    activeFile: { name: string; dataUri: string } | null;
+    showFileBubble: boolean;
+    onRemoveFile: () => void;
 };
 
-export const ChatInterface = memo(function ChatInterface({ messages, isLoading, onSendMessage, onFileChange, fileInputRef, suggestedQuestions }: ChatInterfaceProps) {
+export const ChatInterface = memo(function ChatInterface({ messages, isLoading, onSendMessage, onFileChange, fileInputRef, suggestedQuestions, activeFile, showFileBubble, onRemoveFile }: ChatInterfaceProps) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
@@ -33,7 +37,7 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
         }
     }, [messages, isLoading]);
 
-    const showUploader = messages.length === 0;
+    const showUploader = messages.length === 0 && !activeFile;
 
     return (
         <div className="flex flex-col h-full">
@@ -59,6 +63,9 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                             questions={suggestedQuestions}
                             onQuestionSelect={onSendMessage}
                         />
+                    )}
+                    {activeFile && showFileBubble && (
+                      <FileBubble fileName={activeFile.name} onDismiss={onRemoveFile} />
                     )}
                     <ChatInput 
                         onSendMessage={onSendMessage} 

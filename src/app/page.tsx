@@ -22,6 +22,7 @@ export default function AgriChatPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFileBubble, setShowFileBubble] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,7 +35,12 @@ export default function AgriChatPage() {
         const parsedSessions = JSON.parse(savedSessions);
         setChatSessions(parsedSessions);
         if (savedActiveChatId) {
-          setActiveChatId(JSON.parse(savedActiveChatId));
+          const activeId = JSON.parse(savedActiveChatId);
+          setActiveChatId(activeId);
+          const activeSession = parsedSessions.find((s: ChatSession) => s.id === activeId);
+          if (activeSession?.pdfFile) {
+            setShowFileBubble(true);
+          }
         } else if (parsedSessions.length > 0) {
           setActiveChatId(parsedSessions[0].id);
         }
@@ -82,6 +88,7 @@ export default function AgriChatPage() {
     };
     setChatSessions(prev => [newChatSession, ...prev]);
     setActiveChatId(newChatId);
+    setShowFileBubble(false);
   }, []);
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -112,6 +119,7 @@ export default function AgriChatPage() {
                 ? { ...session, pdfFile: newPdfFile, title: file.name }
                 : session
         ));
+        setShowFileBubble(true);
         
         toast({
           title: "File Uploaded",
@@ -141,6 +149,7 @@ export default function AgriChatPage() {
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
+    setShowFileBubble(false);
 
     // Create a new chat if one doesn't exist
     if (!currentChatId) {
@@ -223,6 +232,17 @@ export default function AgriChatPage() {
     }
   };
 
+  const handleRemoveFile = useCallback(() => {
+    if (activeChatId) {
+      setChatSessions(prev =>
+        prev.map(session =>
+          session.id === activeChatId ? { ...session, pdfFile: null } : session
+        )
+      );
+      setShowFileBubble(false);
+    }
+  }, [activeChatId]);
+
   return (
       <div className="flex flex-col h-screen bg-background text-foreground">
         <header className="flex items-center justify-between p-4 border-b shrink-0">
@@ -246,6 +266,9 @@ export default function AgriChatPage() {
                 onFileChange={handleFileChange}
                 fileInputRef={fileInputRef}
                 suggestedQuestions={suggestedQuestions}
+                activeFile={activeChat?.pdfFile ?? null}
+                showFileBubble={showFileBubble}
+                onRemoveFile={handleRemoveFile}
               />
             </div>
         </main>
