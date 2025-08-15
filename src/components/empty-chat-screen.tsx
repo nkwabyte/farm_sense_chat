@@ -40,7 +40,7 @@ export function EmptyChatScreen({ onSendMessage, onFileChange, fileInputRef, isL
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-bold font-headline mb-2">FarmSenseChat</h1>
