@@ -4,6 +4,8 @@
 import { useRef, useEffect, ChangeEvent, memo, RefObject } from 'react';
 import { ChatMessage, ChatMessageLoading } from '@/components/chat-message';
 import { ChatInput } from '@/components/chat-input';
+import { SuggestedQuestions } from '@/components/suggested-questions';
+import { PdfUploader } from './pdf-uploader';
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -19,9 +21,10 @@ type ChatInterfaceProps = {
     onSendMessage: (message: string) => Promise<void>;
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
     fileInputRef: RefObject<HTMLInputElement>;
+    suggestedQuestions: string[];
 };
 
-export const ChatInterface = memo(function ChatInterface({ messages, isLoading, onSendMessage, onFileChange, fileInputRef }: ChatInterfaceProps) {
+export const ChatInterface = memo(function ChatInterface({ messages, isLoading, onSendMessage, onFileChange, fileInputRef, suggestedQuestions }: ChatInterfaceProps) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
@@ -30,19 +33,33 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
         }
     }, [messages, isLoading]);
 
+    const showUploader = messages.length === 0;
+
     return (
         <div className="flex flex-col h-full">
             <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
-                <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto">
-                    <div className="flex-grow" />
-                    {messages.map((msg) => (
-                        <ChatMessage key={msg.id} {...msg} />
-                    ))}
-                    {isLoading && <ChatMessageLoading />}
+                <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto justify-center">
+                    {showUploader ? (
+                        <PdfUploader onFileChange={onFileChange} ref={fileInputRef} />
+                    ) : (
+                        <>
+                            <div className="flex-grow" />
+                            {messages.map((msg) => (
+                                <ChatMessage key={msg.id} {...msg} />
+                            ))}
+                            {isLoading && <ChatMessageLoading />}
+                        </>
+                    )}
                 </div>
             </div>
             <div className="w-full px-4 pt-4 pb-5 border-t bg-background/80 backdrop-blur-sm shrink-0">
                 <div className="max-w-4xl mx-auto">
+                    {showUploader && (
+                        <SuggestedQuestions 
+                            questions={suggestedQuestions}
+                            onQuestionSelect={onSendMessage}
+                        />
+                    )}
                     <ChatInput 
                         onSendMessage={onSendMessage} 
                         isLoading={isLoading} 

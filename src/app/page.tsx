@@ -11,6 +11,13 @@ import { nanoid } from 'nanoid';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
+const suggestedQuestions = [
+    "What is the importance of soil pH?",
+    "What are the effects of nitrogen deficiency in corn?",
+    "What are the different types of fertilizers for soybeans?",
+    "How do you interpret a soil test report?",
+];
+
 export default function AgriChatPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -35,8 +42,19 @@ export default function AgriChatPage() {
   }, []);
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    if (!activeChatId) {
-        handleNewChat();
+    let currentActiveChatId = activeChatId;
+
+    if (!currentActiveChatId) {
+        const newChatId = nanoid();
+        const newChatSession: ChatSession = {
+            id: newChatId,
+            messages: [],
+            pdfFile: null,
+            title: 'New Chat'
+        };
+        setChatSessions(prev => [...prev, newChatSession]);
+        setActiveChatId(newChatId);
+        currentActiveChatId = newChatId;
     }
 
     const file = event.target.files?.[0];
@@ -47,8 +65,8 @@ export default function AgriChatPage() {
         const newPdfFile = { name: file.name, dataUri };
 
         setChatSessions(prev => prev.map(session =>
-            session.id === activeChatId
-                ? { ...session, pdfFile: newPdfFile }
+            session.id === currentActiveChatId
+                ? { ...session, pdfFile: newPdfFile, title: file.name }
                 : session
         ));
         
@@ -80,6 +98,7 @@ export default function AgriChatPage() {
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
+    let isNewChat = false;
 
     // Create a new chat if one doesn't exist
     if (!currentChatId) {
@@ -93,6 +112,7 @@ export default function AgriChatPage() {
         setChatSessions(prev => [...prev, newChatSession]);
         setActiveChatId(newChatId);
         currentChatId = newChatId;
+        isNewChat = true;
     }
 
     const userMessageId = nanoid();
@@ -109,17 +129,23 @@ export default function AgriChatPage() {
     setIsLoading(true);
 
     try {
-      const currentSession = chatSessions.find(s => s.id === currentChatId) ?? {pdfFile: null};
-
+      // Need to get the latest session state
+      const currentSession = await new Promise<ChatSession | undefined>(resolve => {
+        setChatSessions(currentSessions => {
+            resolve(currentSessions.find(s => s.id === currentChatId));
+            return currentSessions;
+        });
+      });
+      
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: currentSession.pdfFile?.dataUri,
+        pdfDataUri: currentSession?.pdfFile?.dataUri,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source?.replace('ExamplePDF.pdf', currentSession.pdfFile?.name ?? "General Knowledge"),
+        source: response.source?.replace('ExamplePDF.pdf', currentSession?.pdfFile?.name ?? "General Knowledge"),
         id: nanoid(),
       };
       
@@ -171,6 +197,7 @@ export default function AgriChatPage() {
                 onSendMessage={handleSendMessage}
                 onFileChange={handleFileChange}
                 fileInputRef={fileInputRef}
+                suggestedQuestions={suggestedQuestions}
               />
             </div>
         </main>
