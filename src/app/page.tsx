@@ -1,83 +1,36 @@
 
 "use client";
 
-import { useState, useCallback, useRef, useEffect, ChangeEvent } from 'react';
+import { useState, useCallback, useRef, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { ChatHistory } from '@/components/chat-history';
 import { ChatInterface } from '@/components/chat-interface';
 import { nanoid } from 'nanoid';
-
-export type Conversation = {
-  id: string;
-  title: string;
-  messages: Message[];
-  pdfFile?: {
-    name: string;
-    dataUri: string;
-  };
-};
+import { PdfUploader } from '@/components/pdf-uploader';
 
 export default function AgriChatPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [pdfFile, setPdfFile] = useState<{ name: string; dataUri: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const savedConversations = localStorage.getItem('chatHistory');
-    if (savedConversations) {
-      setConversations(JSON.parse(savedConversations));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem('chatHistory', JSON.stringify(conversations));
-    }
-  }, [conversations]);
-
-  const activeConversation = conversations.find(c => c.id === activeChatId);
-
-  const createNewChat = (pdfFile?: { name: string, dataUri: string }) => {
-    const newId = nanoid();
-    const newConversation: Conversation = {
-      id: newId,
-      title: pdfFile ? `Chat with ${pdfFile.name}` : 'New Chat',
-      messages: [],
-      ...(pdfFile && { pdfFile })
-    };
-    if (pdfFile) {
-        const initialMessage: Message = {
-            role: 'assistant',
-            content: `I've analyzed "${pdfFile.name}". What would you like me to do with this document?`,
-            id: Date.now()
-        };
-        newConversation.messages.push(initialMessage);
-    }
-    setConversations(prev => [newConversation, ...prev]);
-    setActiveChatId(newId);
-    return newId;
-  };
-  
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUri = e.target?.result as string;
-        createNewChat({ name: file.name, dataUri });
+        setPdfFile({ name: file.name, dataUri });
+        setMessages([
+          {
+            role: 'assistant',
+            content: `I've analyzed "${file.name}". Ask me anything about it.`,
+            id: Date.now()
+          }
+        ]);
       };
       reader.onerror = () => {
         toast({
@@ -101,51 +54,24 @@ export default function AgriChatPage() {
   }, [toast]);
 
   const handleSendMessage = async (message: string) => {
-    let currentChatId = activeChatId;
-
-    if (!currentChatId) {
-      currentChatId = createNewChat();
-    }
-    
     const userMessage: Message = { role: 'user', content: message, id: Date.now() };
-
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === currentChatId) {
-        const updatedMessages = [...conv.messages, userMessage];
-        // Update title for new chats
-        const newTitle = conv.title === 'New Chat' ? message.substring(0, 30) : conv.title;
-        return { ...conv, messages: updatedMessages, title: newTitle };
-      }
-      return conv;
-    }));
-    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    
-    // We need to find the conversation *after* it has been updated in the state
-    const getUpdatedConversation = () => conversations.find(c => c.id === currentChatId) || {
-        id: currentChatId,
-        messages: [userMessage],
-        title: message.substring(0,30),
-    };
-
 
     try {
-      const currentConversation = getUpdatedConversation();
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: currentConversation.pdfFile?.dataUri,
+        pdfDataUri: pdfFile?.dataUri,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source?.replace('ExamplePDF.pdf', currentConversation.pdfFile?.name ?? "General Knowledge"),
+        source: response.source?.replace('ExamplePDF.pdf', pdfFile?.name ?? "General Knowledge"),
         id: Date.now(),
       };
       
-      setConversations(prev => prev.map(conv => 
-        conv.id === currentChatId ? { ...conv, messages: [...conv.messages, aiMessage] } : conv
-      ));
+      setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error(error);
@@ -155,70 +81,34 @@ export default function AgriChatPage() {
         description: "Could not get a response from the AI. Please try again.",
       });
       // Remove the optimistic user message on error
-      setConversations(prev => prev.map(conv => {
-          if (conv.id === currentChatId) {
-              const newMessages = conv.messages.filter(m => m.id !== userMessage.id);
-              return { ...conv, messages: newMessages };
-          }
-          return conv;
-      }));
-
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const deleteChat = (chatId: string) => {
-    setConversations(prev => prev.filter(c => c.id !== chatId));
-    if (activeChatId === chatId) {
-        setActiveChatId(null);
-    }
-  };
-
-  const clearAllChats = () => {
-    setConversations([]);
-    setActiveChatId(null);
-    localStorage.removeItem('chatHistory');
-  }
-
   return (
-    <SidebarProvider>
-      <div className="flex h-screen bg-background text-foreground">
-        <Sidebar>
-          <SidebarHeader>
-            <Button onClick={() => createNewChat()}>New Chat</Button>
-          </SidebarHeader>
-          <SidebarContent className="p-0">
-            <ChatHistory 
-              conversations={conversations} 
-              activeChatId={activeChatId}
-              setActiveChatId={setActiveChatId}
-              deleteChat={deleteChat}
-              clearAllChats={clearAllChats}
-            />
-          </SidebarContent>
-        </Sidebar>
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between p-2 border-b shrink-0">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
-            </div>
-          </header>
-          <main className="flex-1 overflow-hidden">
-            <SidebarInset className="max-h-full">
+      <div className="flex flex-col h-screen bg-background text-foreground">
+        <header className="flex items-center justify-between p-4 border-b shrink-0">
+          <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
+        </header>
+        <main className="flex-1 overflow-hidden">
+            <div className="h-full">
+              {messages.length === 0 && !pdfFile ? (
+                  <div className="flex items-center justify-center h-full">
+                     <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
+                  </div>
+              ) : (
                 <ChatInterface
-                  key={activeConversation?.id ?? 'new-chat'}
-                  messages={activeConversation?.messages ?? []}
+                  messages={messages}
                   isLoading={isLoading}
                   onSendMessage={handleSendMessage}
                   onFileChange={handleFileChange}
                   fileInputRef={fileInputRef}
                 />
-            </SidebarInset>
-          </main>
-        </div>
+              )}
+            </div>
+        </main>
       </div>
-    </SidebarProvider>
   );
 }
