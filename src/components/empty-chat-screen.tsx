@@ -72,7 +72,7 @@ export function EmptyChatScreen({ onSendMessage, onFileChange, fileInputRef, isL
                     </div>
                 </div>
             </div>
-             <div className="w-full px-4 pt-4 pb-5 mx-auto border-t bg-background/80 backdrop-blur-sm shrink-0">
+             <div className="w-full px-4 pt-4 pb-5 border-t bg-background/80 backdrop-blur-sm shrink-0">
                 <div className="max-w-4xl mx-auto">
                     <ChatInput 
                         onSendMessage={onSendMessage} 
