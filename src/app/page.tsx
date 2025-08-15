@@ -183,38 +183,40 @@ export default function AgriChatPage() {
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col h-screen bg-background text-foreground">
-        <header className="flex items-center justify-between p-2 border-b shrink-0">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger />
-            <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
-          </div>
-        </header>
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar>
-            <SidebarHeader>
-              <Button onClick={() => createNewChat()}>New Chat</Button>
-            </SidebarHeader>
-            <SidebarContent className="p-0">
-              <ChatHistory 
-                conversations={conversations} 
-                activeChatId={activeChatId}
-                setActiveChatId={setActiveChatId}
-                deleteChat={deleteChat}
-                clearAllChats={clearAllChats}
-              />
-            </SidebarContent>
-          </Sidebar>
-          <SidebarInset className="max-h-full">
-            <ChatInterface
-              key={activeConversation?.id ?? 'new-chat'}
-              messages={activeConversation?.messages ?? []}
-              isLoading={isLoading}
-              onSendMessage={handleSendMessage}
-              onFileChange={handleFileChange}
-              fileInputRef={fileInputRef}
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar>
+          <SidebarHeader>
+            <Button onClick={() => createNewChat()}>New Chat</Button>
+          </SidebarHeader>
+          <SidebarContent className="p-0">
+            <ChatHistory 
+              conversations={conversations} 
+              activeChatId={activeChatId}
+              setActiveChatId={setActiveChatId}
+              deleteChat={deleteChat}
+              clearAllChats={clearAllChats}
             />
-          </SidebarInset>
+          </SidebarContent>
+        </Sidebar>
+        <div className="flex flex-col flex-1">
+          <header className="flex items-center justify-between p-2 border-b shrink-0">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger />
+              <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
+            </div>
+          </header>
+          <main className="flex-1 overflow-hidden">
+            <SidebarInset className="max-h-full">
+                <ChatInterface
+                  key={activeConversation?.id ?? 'new-chat'}
+                  messages={activeConversation?.messages ?? []}
+                  isLoading={isLoading}
+                  onSendMessage={handleSendMessage}
+                  onFileChange={handleFileChange}
+                  fileInputRef={fileInputRef}
+                />
+            </SidebarInset>
+          </main>
         </div>
       </div>
     </SidebarProvider>
