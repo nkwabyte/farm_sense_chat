@@ -182,12 +182,14 @@ export default function AgriChatPage() {
         <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-4">
                 <h1 className="text-2xl font-bold font-headline">AgriChat PDF</h1>
-                <ChatHistory sessions={chatSessions} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
             </div>
-            <Button variant="outline" onClick={handleNewChat}>
-                <PlusCircle className="w-5 h-5 mr-2"/>
-                New Chat
-            </Button>
+            <div className="flex items-center gap-4">
+                <ChatHistory sessions={chatSessions} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
+                <Button variant="outline" onClick={handleNewChat}>
+                    <PlusCircle className="w-5 h-5 mr-2"/>
+                    New Chat
+                </Button>
+            </div>
         </header>
         <main className="flex-1 overflow-hidden">
             <div className="h-full">
