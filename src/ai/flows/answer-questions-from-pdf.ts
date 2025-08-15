@@ -16,7 +16,7 @@ const AnswerQuestionsFromPdfInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      'The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' /* Added description for data URI format */
+      "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'." /* Added description for data URI format */
     ),
 });
 export type AnswerQuestionsFromPdfInput = z.infer<
@@ -43,7 +43,7 @@ const pdfInformationTool = ai.defineTool(
       pdfDataUri: z
         .string()
         .describe(
-          'The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' /* Added description for data URI format */
+          "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'." /* Added description for data URI format */
         ),
     }),
     outputSchema: z.object({
@@ -53,7 +53,7 @@ const pdfInformationTool = ai.defineTool(
         .describe('The source of the answer (PDF name and page numbers).'),
     }),
   },
-  async (input) => {
+  async function (input) {
     // Placeholder implementation for extracting information from the PDF.
     // In a real application, this would involve parsing the PDF and
     // extracting relevant text based on the question.
@@ -99,7 +99,7 @@ PDF Document: {{media url=pdfDataUri}}
 
 
 export async function answerQuestionsFromPdf(
-  input: AnswerQuestionsFromPdvInput
+  input: AnswerQuestionsFromPdfInput
 ): Promise<AnswerQuestionsFromPdfOutput> {
   const llmResponse = await answerQuestionsFromPdfPrompt(input);
   const output = llmResponse.output();
@@ -112,23 +112,3 @@ export async function answerQuestionsFromPdf(
   }
   return output;
 }
-
-const answerQuestionsFromPdfFlow = ai.defineFlow(
-  {
-    name: 'answerQuestionsFromPdfFlow',
-    inputSchema: AnswerQuestionsFromPdfInputSchema,
-    outputSchema: AnswerQuestionsFromPdfOutputSchema,
-  },
-  async input => {
-    const llmResponse = await answerQuestionsFromPdfPrompt(input);
-    const output = llmResponse.output();
-    
-    if (!output) {
-      return {
-        answer: "I'm sorry, I was unable to generate a response. Please try again.",
-        source: "System"
-      };
-    }
-    return output;
-  }
-);

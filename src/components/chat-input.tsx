@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent, RefObject } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { SendHorizonal, LoaderCircle, Paperclip } from 'lucide-react';
@@ -8,12 +8,13 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 
 type ChatInputProps = {
-    onSendMessage: (message: string, isUserMessage?: boolean) => Promise<void>;
+    onSendMessage: (message: string) => Promise<void>;
     isLoading: boolean;
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+    fileInputRef: RefObject<HTMLInputElement>;
 };
 
-export function ChatInput({ onSendMessage, isLoading, onFileChange }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputId = 'chat-file-upload';
@@ -34,7 +35,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange }: ChatInputP
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto';
             }
-            await onSendMessage(currentMessage, true);
+            await onSendMessage(currentMessage);
         }
     };
     
@@ -53,13 +54,13 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange }: ChatInputP
                     <span className="sr-only">Attach file</span>
                 </Label>
             </Button>
-            <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} />
+            <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} ref={fileInputRef} />
             <Textarea
                 ref={textareaRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask a question about the document..."
+                placeholder="Ask a question about agriculture or your document..."
                 className="py-3 pl-4 text-base resize-none pr-14 max-h-48"
                 disabled={isLoading}
                 rows={1}

@@ -1,98 +1,151 @@
+
 "use client";
 
 import { useState, useCallback, useRef, useEffect, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
-import { PdfUploader } from '@/components/pdf-uploader';
-import { ChatInterface, type Message } from '@/components/chat-interface';
-import { ChatInput } from '@/components/chat-input';
-import { OptionSelector } from '@/components/option-selector';
-import { FarmerReport } from '@/components/farmer-report';
+import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
-import { type FormatFarmerReportOutput } from '@/ai/flows/format-farmer-report';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { ChatHistory } from '@/components/chat-history';
+import { ChatInterface } from '@/components/chat-interface';
+import { nanoid } from 'nanoid';
+import { EmptyChatScreen } from '@/components/empty-chat-screen';
+
+export type Conversation = {
+  id: string;
+  title: string;
+  messages: Message[];
+  pdfFile?: {
+    name: string;
+    dataUri: string;
+  };
+};
 
 export default function AgriChatPage() {
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfDataUri, setPdfDataUri] = useState<string | null>(null);
-  const [view, setView] = useState<'chat' | 'uploader' | 'options' | 'report'>('chat');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Send an initial greeting from the AI when the chat view loads for the first time.
-    if (view === 'chat' && messages.length === 0 && !pdfFile) {
+    const savedConversations = localStorage.getItem('chatHistory');
+    if (savedConversations) {
+      setConversations(JSON.parse(savedConversations));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      localStorage.setItem('chatHistory', JSON.stringify(conversations));
+    }
+  }, [conversations]);
+
+  const activeConversation = conversations.find(c => c.id === activeChatId);
+
+  const createNewChat = (pdfFile?: { name: string, dataUri: string }) => {
+    const newId = nanoid();
+    const newConversation: Conversation = {
+      id: newId,
+      title: pdfFile ? `Chat with ${pdfFile.name}` : 'New Chat',
+      messages: [],
+      ...(pdfFile && { pdfFile })
+    };
+    if (pdfFile) {
         const initialMessage: Message = {
             role: 'assistant',
-            content: "Hello! I'm FarmSenseChat. You can ask me questions about farming, or upload a document to get started.",
+            content: `I've analyzed "${pdfFile.name}". What would you like me to do with this document?`,
             id: Date.now()
         };
-        setMessages([initialMessage]);
+        newConversation.messages.push(initialMessage);
     }
-  }, [view, messages.length, pdfFile]);
-
-
-  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setConversations(prev => [newConversation, ...prev]);
+    setActiveChatId(newId);
+    return newId;
+  };
+  
+  const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUri = e.target?.result as string;
-        setPdfFile(file);
-        setPdfDataUri(dataUri);
-        setMessages([]); // Clear messages for the new document
-        setView('options');
+        createNewChat({ name: file.name, dataUri });
       };
       reader.onerror = () => {
         toast({
-            variant: "destructive",
-            title: "File Read Error",
-            description: "There was an error reading your file.",
+          variant: "destructive",
+          title: "File Read Error",
+          description: "There was an error reading your file.",
         });
       };
       reader.readAsDataURL(file);
     } else if (file) {
-        toast({
-            variant: "destructive",
-            title: "Invalid File Type",
-            description: "Please upload a valid PDF or DOCX file.",
-        });
+      toast({
+        variant: "destructive",
+        title: "Invalid File Type",
+        description: "Please upload a valid PDF or DOCX file.",
+      });
+    }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   }, [toast]);
-  
-  const handleReset = useCallback(() => {
-    setPdfFile(null);
-    setPdfDataUri(null);
-    setMessages([]);
-    setView('uploader');
-    if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-    }
-  }, []);
 
-  const handleSendMessage = async (message: string, isUserMessage: boolean = true) => {
-    if (isUserMessage) {
-        const userMessage: Message = { role: 'user', content: message, id: Date.now() };
-        setMessages((prev) => [...prev, userMessage]);
+  const handleSendMessage = async (message: string) => {
+    let currentChatId = activeChatId;
+
+    if (!currentChatId) {
+      currentChatId = createNewChat();
     }
     
+    const userMessage: Message = { role: 'user', content: message, id: Date.now() };
+
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === currentChatId) {
+        const updatedMessages = [...conv.messages, userMessage];
+        // Update title for new chats
+        const newTitle = conv.title === 'New Chat' ? message.substring(0, 30) : conv.title;
+        return { ...conv, messages: updatedMessages, title: newTitle };
+      }
+      return conv;
+    }));
+    
     setIsLoading(true);
+    
+    const currentConversation = conversations.find(c => c.id === currentChatId) || {
+        id: currentChatId,
+        messages: [userMessage],
+        title: message.substring(0,30),
+    };
+
 
     try {
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: pdfDataUri || undefined,
+        pdfDataUri: currentConversation.pdfFile?.dataUri,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source?.replace('ExamplePDF.pdf', pdfFile?.name ?? "General Knowledge"),
+        source: response.source?.replace('ExamplePDF.pdf', currentConversation.pdfFile?.name ?? "General Knowledge"),
         id: Date.now(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      
+      setConversations(prev => prev.map(conv => 
+        conv.id === currentChatId ? { ...conv, messages: [...conv.messages, aiMessage] } : conv
+      ));
+
     } catch (error) {
       console.error(error);
       toast({
@@ -100,89 +153,72 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
-      if(isUserMessage) {
-        setMessages(prev => prev.slice(0, -1)); // Remove the optimistic user message on error
-      }
+      // Remove the optimistic user message on error
+      setConversations(prev => prev.map(conv => {
+          if (conv.id === currentChatId) {
+              return { ...conv, messages: conv.messages.slice(0, -1) };
+          }
+          return conv;
+      }));
+
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReportFormatted = (report: FormatFarmerReportOutput) => {
-    const formattedReportString = `
-**Farm Details**
-${report.farmDetails}
-
-**What We Checked**
-${report.whatWeChecked}
-
-**What We Found**
-${report.whatWeFound}
-
-**What You Should Do**
-${report.whatYouShouldDo}
-
-**Money Matters**
-${report.moneyMatters}
-
-**Extra Tips**
-${report.extraTips}
-    `.trim();
-
-    setMessages([
-      {
-        role: 'assistant',
-        content: formattedReportString,
-        id: Date.now(),
-        isReport: true,
-      },
-    ]);
-    setView('chat');
-  };
-
-  const renderContent = () => {
-    switch (view) {
-      case 'uploader':
-        return (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 p-6 overflow-y-auto">
-              <div className="flex flex-col max-w-4xl gap-6 mx-auto">
-                <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
-              </div>
-            </div>
-          </div>
-        );
-      case 'options':
-        return pdfFile && <OptionSelector onSelect={setView} pdfFileName={pdfFile.name} />;
-      case 'chat':
-        return (
-          <ChatInterface 
-            pdfFileName={pdfFile?.name}
-            messages={messages} 
-            isLoading={isLoading} 
-            onSendMessage={handleSendMessage}
-            onFileChange={handleFileChange} 
-          />
-        );
-      case 'report':
-        return pdfFile && <FarmerReport pdfFile={pdfFile} onReportFormatted={handleReportFormatted} />;
-      default:
-        return null;
+  const deleteChat = (chatId: string) => {
+    setConversations(prev => prev.filter(c => c.id !== chatId));
+    if (activeChatId === chatId) {
+        setActiveChatId(null);
     }
   };
 
+  const clearAllChats = () => {
+    setConversations([]);
+    setActiveChatId(null);
+    localStorage.removeItem('chatHistory');
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="flex items-center justify-between p-4 border-b shrink-0">
-        <div className="flex items-center">
-          <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
+    <SidebarProvider>
+      <div className="flex flex-col h-screen bg-background text-foreground">
+        <header className="flex items-center justify-between p-2 border-b shrink-0">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
+          </div>
+        </header>
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar>
+            <SidebarHeader>
+              <Button onClick={() => createNewChat()}>New Chat</Button>
+            </SidebarHeader>
+            <SidebarContent className="p-0">
+              <ChatHistory 
+                conversations={conversations} 
+                activeChatId={activeChatId}
+                setActiveChatId={setActiveChatId}
+                deleteChat={deleteChat}
+                clearAllChats={clearAllChats}
+              />
+            </SidebarContent>
+          </Sidebar>
+          <SidebarInset className="max-h-full">
+            {activeConversation ? (
+              <ChatInterface
+                key={activeConversation.id}
+                messages={activeConversation.messages}
+                isLoading={isLoading}
+                onSendMessage={handleSendMessage}
+                onFileChange={handleFileChange}
+                fileInputRef={fileInputRef}
+              />
+            ) : (
+                <EmptyChatScreen onSendMessage={handleSendMessage} onFileChange={handleFileChange} fileInputRef={fileInputRef} />
+            )}
+          </SidebarInset>
         </div>
-        {view !== 'uploader' && (
-           <Button variant="outline" onClick={() => setView('uploader')}>Upload Document</Button>
-        )}
-      </header>
-      
-      {renderContent()}
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
