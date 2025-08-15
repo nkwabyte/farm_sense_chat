@@ -55,20 +55,22 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
                 </Label>
             </Button>
             <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} ref={fileInputRef} />
-            <Textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask a question about agriculture or your document..."
-                className="py-3 pl-4 text-base resize-none pr-14 max-h-48"
-                disabled={isLoading}
-                rows={1}
-                aria-label="Chat input"
-            />
-            <Button type="submit" size="icon" className="absolute shrink-0 bottom-2.5 right-2.5" disabled={isLoading || !message.trim()} aria-label="Send message">
-                {isLoading ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <SendHorizonal className="w-5 h-5" />}
-            </Button>
+            <div className="relative flex-1">
+                <Textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask a question about agriculture or your document..."
+                    className="py-3 pl-4 text-base resize-none pr-14 max-h-48"
+                    disabled={isLoading}
+                    rows={1}
+                    aria-label="Chat input"
+                />
+                <Button type="submit" size="icon" className="absolute shrink-0 bottom-2.5 right-2.5" disabled={isLoading || !message.trim()} aria-label="Send message">
+                    {isLoading ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <SendHorizonal className="w-5 h-5" />}
+                </Button>
+            </div>
         </form>
     );
 }

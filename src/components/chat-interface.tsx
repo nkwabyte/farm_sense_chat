@@ -31,7 +31,7 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
     }, [messages, isLoading]);
 
     return (
-        <div className="flex flex-col flex-1 h-full overflow-hidden">
+        <div className="flex flex-col h-full">
             <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
                 <div className="flex flex-col max-w-4xl gap-6 mx-auto">
                     {messages.map((msg) => (
@@ -40,13 +40,15 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                     {isLoading && <ChatMessageLoading />}
                 </div>
             </div>
-            <div className="w-full max-w-4xl p-4 mx-auto border-t bg-background/80 backdrop-blur-sm shrink-0">
-                <ChatInput 
-                    onSendMessage={onSendMessage} 
-                    isLoading={isLoading} 
-                    onFileChange={onFileChange} 
-                    fileInputRef={fileInputRef} 
-                />
+            <div className="w-full p-4 mx-auto border-t bg-background/80 backdrop-blur-sm shrink-0">
+                <div className="max-w-4xl mx-auto">
+                    <ChatInput 
+                        onSendMessage={onSendMessage} 
+                        isLoading={isLoading} 
+                        onFileChange={onFileChange} 
+                        fileInputRef={fileInputRef} 
+                    />
+                </div>
             </div>
         </div>
     );
