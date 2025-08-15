@@ -22,19 +22,15 @@ export default function AgriChatPage() {
       reader.onload = (e) => {
         const dataUri = e.target?.result as string;
         setPdfFile({ name: file.name, dataUri });
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `I've analyzed "${file.name}". Ask me anything about it.`,
-            id: nanoid()
-          }
-        ]);
+        toast({
+          title: "File Uploaded",
+          description: `"${file.name}" is ready for analysis.`,
+        });
       };
       reader.onerror = () => {
         toast({
           variant: "destructive",
-          title: "File Read Error",
+          title: "File ReadError",
           description: "There was an error reading your file.",
         });
       };
@@ -86,15 +82,6 @@ export default function AgriChatPage() {
       setIsLoading(false);
     }
   };
-  
-  const initialMessages: Message[] =  messages.length === 0 && !pdfFile ? [
-      {
-        role: 'assistant',
-        content: `Welcome to AgriChat! You can ask me general questions about farming or upload a document for analysis.`,
-        id: 'initial-welcome'
-      }
-    ] : messages;
-
 
   return (
       <div className="flex flex-col h-screen bg-background text-foreground">
@@ -104,7 +91,7 @@ export default function AgriChatPage() {
         <main className="flex-1 overflow-hidden">
             <div className="h-full">
               <ChatInterface
-                messages={initialMessages}
+                messages={messages}
                 isLoading={isLoading}
                 onSendMessage={handleSendMessage}
                 onFileChange={handleFileChange}
