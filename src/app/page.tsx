@@ -2,13 +2,11 @@
 "use client";
 
 import { useState, useCallback, useRef, ChangeEvent } from 'react';
-import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
 import { ChatInterface } from '@/components/chat-interface';
 import { nanoid } from 'nanoid';
-import { PdfUploader } from '@/components/pdf-uploader';
 
 export default function AgriChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,11 +22,12 @@ export default function AgriChatPage() {
       reader.onload = (e) => {
         const dataUri = e.target?.result as string;
         setPdfFile({ name: file.name, dataUri });
-        setMessages([
+        setMessages(prev => [
+          ...prev,
           {
             role: 'assistant',
             content: `I've analyzed "${file.name}". Ask me anything about it.`,
-            id: Date.now()
+            id: nanoid()
           }
         ]);
       };
@@ -54,7 +53,8 @@ export default function AgriChatPage() {
   }, [toast]);
 
   const handleSendMessage = async (message: string) => {
-    const userMessage: Message = { role: 'user', content: message, id: Date.now() };
+    const userMessageId = nanoid();
+    const userMessage: Message = { role: 'user', content: message, id: userMessageId };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -68,7 +68,7 @@ export default function AgriChatPage() {
         role: 'assistant',
         content: response.answer,
         source: response.source?.replace('ExamplePDF.pdf', pdfFile?.name ?? "General Knowledge"),
-        id: Date.now(),
+        id: nanoid(),
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -81,32 +81,35 @@ export default function AgriChatPage() {
         description: "Could not get a response from the AI. Please try again.",
       });
       // Remove the optimistic user message on error
-      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+      setMessages(prev => prev.filter(m => m.id !== userMessageId));
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const initialMessages: Message[] =  messages.length === 0 && !pdfFile ? [
+      {
+        role: 'assistant',
+        content: `Welcome to AgriChat! You can ask me general questions about farming or upload a document for analysis.`,
+        id: 'initial-welcome'
+      }
+    ] : messages;
+
 
   return (
       <div className="flex flex-col h-screen bg-background text-foreground">
         <header className="flex items-center justify-between p-4 border-b shrink-0">
-          <h1 className="text-2xl font-bold font-headline">FarmSenseChat</h1>
+          <h1 className="text-2xl font-bold font-headline">AgriChat PDF</h1>
         </header>
         <main className="flex-1 overflow-hidden">
             <div className="h-full">
-              {messages.length === 0 && !pdfFile ? (
-                  <div className="flex items-center justify-center h-full">
-                     <PdfUploader onFileChange={handleFileChange} ref={fileInputRef} />
-                  </div>
-              ) : (
-                <ChatInterface
-                  messages={messages}
-                  isLoading={isLoading}
-                  onSendMessage={handleSendMessage}
-                  onFileChange={handleFileChange}
-                  fileInputRef={fileInputRef}
-                />
-              )}
+              <ChatInterface
+                messages={initialMessages}
+                isLoading={isLoading}
+                onSendMessage={handleSendMessage}
+                onFileChange={handleFileChange}
+                fileInputRef={fileInputRef}
+              />
             </div>
         </main>
       </div>

@@ -9,7 +9,7 @@ export type Message = {
   role: 'user' | 'assistant';
   content: string;
   source?: string;
-  id: number;
+  id: string;
   isReport?: boolean;
 };
 
@@ -32,7 +32,7 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
 
     return (
         <div className="flex flex-col h-full">
-            <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6">
+            <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
                 <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto">
                     <div className="flex-grow" />
                     {messages.map((msg) => (

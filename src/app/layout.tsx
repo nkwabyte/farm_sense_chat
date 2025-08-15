@@ -10,7 +10,7 @@ const fontSans = FontSans({
 })
 
 export const metadata: Metadata = {
-  title: 'FarmSenseChat',
+  title: 'AgriChat PDF',
   description: 'Chat with your agricultural PDF documents.',
 };
 

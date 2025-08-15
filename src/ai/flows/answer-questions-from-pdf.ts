@@ -16,7 +16,7 @@ const AnswerQuestionsFromPdfInputSchema = z.object({
     .string()
     .optional()
     .describe(
-      "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'." /* Added description for data URI format */
+      "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'" /* Added description for data URI format */
     ),
 });
 export type AnswerQuestionsFromPdfInput = z.infer<
@@ -43,7 +43,7 @@ const pdfInformationTool = ai.defineTool(
       pdfDataUri: z
         .string()
         .describe(
-          "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'." /* Added description for data URI format */
+          "The PDF document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'" /* Added description for data URI format */
         ),
     }),
     outputSchema: z.object({
