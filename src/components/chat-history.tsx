@@ -38,12 +38,12 @@ export function ChatHistory({ sessions, activeChatId, setActiveChatId }: ChatHis
                     <ChevronDown className="w-4 h-4 ml-2" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64">
+            <DropdownMenuContent className="w-64 max-h-96 overflow-y-auto">
                 <DropdownMenuLabel>Your Conversations</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {sessions.length > 0 ? (
                     sessions.map(session => (
-                        <DropdownMenuItem key={session.id} onSelect={() => setActiveChatId(session.id)}>
+                        <DropdownMenuItem key={session.id} onSelect={() => setActiveChatId(session.id)} disabled={session.id === activeChatId}>
                             <MessageSquare className="w-4 h-4 mr-2"/>
                             <span>{session.title}</span>
                         </DropdownMenuItem>

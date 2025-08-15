@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback, useRef, ChangeEvent, useMemo } from 'react';
+import { useState, useCallback, useRef, ChangeEvent, useMemo, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
@@ -25,6 +25,49 @@ export default function AgriChatPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    try {
+      const savedSessions = window.localStorage.getItem('chatSessions');
+      const savedActiveChatId = window.localStorage.getItem('activeChatId');
+
+      if (savedSessions) {
+        const parsedSessions = JSON.parse(savedSessions);
+        setChatSessions(parsedSessions);
+        if (savedActiveChatId) {
+          setActiveChatId(JSON.parse(savedActiveChatId));
+        } else if (parsedSessions.length > 0) {
+          setActiveChatId(parsedSessions[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load from local storage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (chatSessions.length > 0) {
+        window.localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+      } else {
+        window.localStorage.removeItem('chatSessions');
+      }
+    } catch (error) {
+      console.error("Failed to save sessions to local storage", error);
+    }
+  }, [chatSessions]);
+
+  useEffect(() => {
+    try {
+      if (activeChatId) {
+        window.localStorage.setItem('activeChatId', JSON.stringify(activeChatId));
+      } else {
+        window.localStorage.removeItem('activeChatId');
+      }
+    } catch (error) {
+      console.error("Failed to save active chat ID to local storage", error);
+    }
+  }, [activeChatId]);
+
   const activeChat = useMemo(() => {
     return chatSessions.find(session => session.id === activeChatId);
   }, [chatSessions, activeChatId]);
@@ -37,7 +80,7 @@ export default function AgriChatPage() {
       pdfFile: null,
       title: 'New Chat'
     };
-    setChatSessions(prev => [...prev, newChatSession]);
+    setChatSessions(prev => [newChatSession, ...prev]);
     setActiveChatId(newChatId);
   }, []);
   
@@ -52,7 +95,7 @@ export default function AgriChatPage() {
             pdfFile: null,
             title: 'New Chat'
         };
-        setChatSessions(prev => [...prev, newChatSession]);
+        setChatSessions(prev => [newChatSession, ...prev]);
         setActiveChatId(newChatId);
         currentActiveChatId = newChatId;
     }
@@ -94,11 +137,10 @@ export default function AgriChatPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId, handleNewChat]);
+  }, [toast, activeChatId]);
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
-    let isNewChat = false;
 
     // Create a new chat if one doesn't exist
     if (!currentChatId) {
@@ -109,10 +151,9 @@ export default function AgriChatPage() {
             pdfFile: null,
             title: message.substring(0, 30) + "..."
         };
-        setChatSessions(prev => [...prev, newChatSession]);
+        setChatSessions(prev => [newChatSession, ...prev]);
         setActiveChatId(newChatId);
         currentChatId = newChatId;
-        isNewChat = true;
     }
 
     const userMessageId = nanoid();
@@ -122,7 +163,12 @@ export default function AgriChatPage() {
     setChatSessions(prev =>
       prev.map(session =>
         session.id === currentChatId
-          ? { ...session, messages: [...session.messages, userMessage] }
+          ? { 
+              ...session, 
+              messages: [...session.messages, userMessage],
+              // Update title for new chats on first message
+              title: session.messages.length === 0 ? message.substring(0, 30) + "..." : session.title,
+            }
           : session
       )
     );
