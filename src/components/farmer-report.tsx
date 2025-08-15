@@ -136,6 +136,7 @@ export function FarmerReport({ pdfFile, onReportFormatted }: FarmerReportProps) 
                                 <ReportSection title="What You Should Do" content={report.whatYouShouldDo} />
                                 <ReportSection title="Money Matters" content={report.moneyMatters} />
                                 <ReportSection title="Extra Tips" content={report.extraTips} />
+                                <ReportSection title="Detailed Explanation" content={report.detailedExplanation} />
                             </div>
                         )}
                     </CardContent>
