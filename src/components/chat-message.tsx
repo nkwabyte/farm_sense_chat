@@ -4,6 +4,8 @@ import { Bot, User, FileText, LoaderCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type ChatMessageProps = {
     role: 'user' | 'assistant';
@@ -16,20 +18,31 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
     const isUser = role === 'user';
 
     const renderContent = () => {
-        if (!isReport) {
+        if (isUser) {
             return <p className="whitespace-pre-wrap">{content}</p>;
         }
 
-        const sections = content.split('\n\n');
-        return sections.map((section, index) => {
-            const [title, ...body] = section.split('\n');
-            return (
-                <div key={index} className="mb-4 last:mb-0">
-                    <h4 className="font-bold">{title.replace(/\*\*/g, '')}</h4>
-                    <p className="whitespace-pre-wrap">{body.join('\n')}</p>
-                </div>
-            );
-        });
+        if (isReport) {
+            const sections = content.split('\n\n');
+            return sections.map((section, index) => {
+                const [title, ...body] = section.split('\n');
+                return (
+                    <div key={index} className="mb-4 last:mb-0">
+                        <h4 className="font-bold">{title.replace(/\*\*/g, '')}</h4>
+                        <p className="whitespace-pre-wrap">{body.join('\n')}</p>
+                    </div>
+                );
+            });
+        }
+        
+        return (
+            <ReactMarkdown
+                className="prose dark:prose-invert prose-p:whitespace-pre-wrap"
+                remarkPlugins={[remarkGfm]}
+            >
+                {content}
+            </ReactMarkdown>
+        )
     };
 
     return (

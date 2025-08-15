@@ -22,6 +22,7 @@ const FormatFarmerReportOutputSchema = z.object({
   whatYouShouldDo: z.string().describe('Clear fertilizer advice: type, amount, and application.'),
   moneyMatters: z.string().describe('Total fertilizer cost and expected profit in simple terms.'),
   extraTips: z.string().describe('Other instructions like applying lime or manure with explanations.'),
+  detailedExplanation: z.string().describe('A detailed explanation of what the values, details, and figures in the report mean for the farmer and their crops.'),
 });
 export type FormatFarmerReportOutput = z.infer<typeof FormatFarmerReportOutputSchema>;
 
@@ -61,6 +62,9 @@ Mention the total cost of the fertilizer and the expected profit in simple words
 
 Extra Tips
 Give any other instructions like applying lime or manure, and explain why it is helpful. Use farming actions the farmer is familiar with.
+
+Detailed Explanation
+After formatting the report, provide a detailed explanation of what the values, details, and figures in the report mean for the farmer and their crops. Explain the 'why' behind the advice. For example, if you recommend a certain fertilizer, explain why that specific type is good for their soil and crop. If a pH level is bad, explain what that means for nutrient absorption.
 
 Keep the sentences short and easy to follow. Use no special characters, no emojis, and no complicated formatting. The tone should be respectful, clear, and helpful.
 
