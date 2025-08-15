@@ -214,7 +214,12 @@ export default function AgriChatPage() {
                 fileInputRef={fileInputRef}
               />
             ) : (
-                <EmptyChatScreen onSendMessage={handleSendMessage} onFileChange={handleFileChange} fileInputRef={fileInputRef} />
+                <EmptyChatScreen 
+                    onSendMessage={handleSendMessage} 
+                    onFileChange={handleFileChange} 
+                    fileInputRef={fileInputRef} 
+                    isLoading={isLoading}
+                />
             )}
           </SidebarInset>
         </div>
