@@ -6,24 +6,29 @@ import { useToast } from "@/hooks/use-toast";
 import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
 import { ChatInterface } from '@/components/chat-interface';
-import { ChatHistory, type ChatSession } from '@/components/chat-history';
+import { ChatSidebar, type ChatSession } from '@/components/chat-sidebar';
 import { nanoid } from 'nanoid';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ChatHeader } from '@/components/chat-header';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 
 const suggestedQuestions = [
     "What is the importance of soil pH?",
-    "What are the effects of nitrogen deficiency in corn?",
+    "What are the signs of nitrogen deficiency in maize?",
     "What are the different types of fertilizers for soybeans?",
-    "How do you interpret a soil test report?",
+    "Explain this soil report in very simple english for a farmer.",
 ];
 
 export default function AgriChatPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const activeChat = useMemo(() => {
     return chatSessions.find(session => session.id === activeChatId);
@@ -37,15 +42,19 @@ export default function AgriChatPage() {
       if (savedSessions) {
         const parsedSessions = JSON.parse(savedSessions);
         setChatSessions(parsedSessions);
-        if (savedActiveChatId) {
+        if (savedActiveChatId && parsedSessions.some((s: ChatSession) => s.id === JSON.parse(savedActiveChatId))) {
           setActiveChatId(JSON.parse(savedActiveChatId));
         } else if (parsedSessions.length > 0) {
           setActiveChatId(parsedSessions[0].id);
         }
+      } else {
+        handleNewChat();
       }
     } catch (error) {
       console.error("Failed to load from local storage", error);
+      handleNewChat();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -82,12 +91,45 @@ export default function AgriChatPage() {
     };
     setChatSessions(prev => [newChatSession, ...prev]);
     setActiveChatId(newChatId);
+    if(isMobile) setIsSidebarOpen(false);
+  }, [isMobile]);
+
+  const handleDeleteChat = useCallback((sessionId: string) => {
+    setChatSessions(prev => {
+      const newSessions = prev.filter(session => session.id !== sessionId);
+      if (activeChatId === sessionId) {
+        if (newSessions.length > 0) {
+          setActiveChatId(newSessions[0].id);
+        } else {
+          // If all chats are deleted, create a new one
+          const newChatId = nanoid();
+          const newChatSession: ChatSession = {
+            id: newChatId,
+            messages: [],
+            pdfFile: null,
+            title: 'New Chat'
+          };
+          setActiveChatId(newChatId);
+          return [newChatSession];
+        }
+      }
+      return newSessions;
+    });
+  }, [activeChatId]);
+
+  const handleRenameChat = useCallback((sessionId: string, newTitle: string) => {
+    setChatSessions(prev => 
+      prev.map(session => 
+        session.id === sessionId ? { ...session, title: newTitle } : session
+      )
+    );
   }, []);
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     let currentActiveChatId = activeChatId;
 
-    if (!currentActiveChatId) {
+    // Create a new chat if the current one already has messages, or if no chat exists
+    if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0)) {
         const newChatId = nanoid();
         const newChatSession: ChatSession = {
             id: newChatId,
@@ -134,15 +176,16 @@ export default function AgriChatPage() {
       });
     }
     
+    // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId]);
+  }, [toast, activeChatId, activeChat]);
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
     
-    // Create a new chat if one doesn't exist
+    // Create new chat if none exists
     if (!currentChatId) {
         const newChatId = nanoid();
         const newChatSession: ChatSession = {
@@ -159,14 +202,13 @@ export default function AgriChatPage() {
     const userMessageId = nanoid();
     const userMessage: Message = { role: 'user', content: message, id: userMessageId };
 
-    // Update messages for the current chat
     setChatSessions(prev =>
       prev.map(session =>
         session.id === currentChatId
           ? { 
               ...session, 
               messages: [...session.messages, userMessage],
-              // Update title for new chats on first message
+              // Set title from first message
               title: session.messages.length === 0 ? message.substring(0, 30) + "..." : session.title,
             }
           : session
@@ -175,7 +217,7 @@ export default function AgriChatPage() {
     setIsLoading(true);
 
     try {
-      // Need to get the latest session state
+      // It's important to get the most up-to-date session state
       const currentSession = await new Promise<ChatSession | undefined>(resolve => {
         setChatSessions(currentSessions => {
             resolve(currentSessions.find(s => s.id === currentChatId));
@@ -210,7 +252,7 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
-      // Remove the optimistic user message on error
+      // Remove the user message if AI fails
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
@@ -220,6 +262,7 @@ export default function AgriChatPage() {
       );
     } finally {
       setIsLoading(false);
+      handleRemoveFile();
     }
   };
 
@@ -232,26 +275,52 @@ export default function AgriChatPage() {
       );
     }
   }, [activeChatId]);
+  
+  const onSelectChat = (id: string) => {
+    setActiveChatId(id);
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  }
 
-  // Show file bubble if there's a file but no messages yet
-  const showFileBubble = activeChat?.pdfFile && (activeChat?.messages.length ?? 0) === 0;
+  const sidebarContent = (
+    <ChatSidebar 
+      sessions={chatSessions} 
+      activeChatId={activeChatId} 
+      setActiveChatId={onSelectChat}
+      onNewChat={handleNewChat}
+      onDeleteChat={handleDeleteChat}
+      onRenameChat={handleRenameChat}
+    />
+  );
 
   return (
-      <div className="flex flex-col h-screen bg-background text-foreground">
-        <header className="flex items-center justify-between p-4 border-b shrink-0">
-            <div className="flex items-center gap-4">
-                {/* Title removed as requested */}
+    <div className="flex h-screen w-full">
+        {!isMobile && (
+            <div className="w-72 flex-shrink-0">
+                {sidebarContent}
             </div>
-            <div className="flex items-center gap-4">
-                <ChatHistory sessions={chatSessions} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
-                <Button variant="outline" onClick={handleNewChat}>
-                    <PlusCircle className="w-5 h-5 mr-2"/>
-                    New Chat
-                </Button>
-            </div>
-        </header>
-        <main className="flex-1 overflow-hidden">
-            <div className="h-full">
+        )}
+        <div className="flex flex-col flex-1 h-screen bg-background text-foreground">
+          {isMobile && (
+            <ChatHeader>
+               <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <PanelLeft />
+                    <span className="sr-only">Toggle Menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0">
+                   <SheetHeader className="p-4">
+                    <SheetTitle className='sr-only'>Conversations</SheetTitle>
+                  </SheetHeader>
+                  {sidebarContent}
+                </SheetContent>
+              </Sheet>
+            </ChatHeader>
+          )}
+          <main className="flex-1 overflow-hidden">
               <ChatInterface
                 messages={activeChat?.messages ?? []}
                 isLoading={isLoading}
@@ -260,11 +329,14 @@ export default function AgriChatPage() {
                 fileInputRef={fileInputRef}
                 suggestedQuestions={suggestedQuestions}
                 activeFile={activeChat?.pdfFile ?? null}
-                showFileBubble={showFileBubble}
                 onRemoveFile={handleRemoveFile}
+                key={activeChatId} // Re-mounts the component when chat changes
               />
-            </div>
-        </main>
-      </div>
+          </main>
+          <footer className="px-4 py-2 text-xs text-center border-t text-muted-foreground">
+            Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+          </footer>
+        </div>
+    </div>
   );
 }
