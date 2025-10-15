@@ -34,7 +34,7 @@ const prompt = ai.definePrompt({
   name: 'formatFarmerReportPrompt',
   input: {schema: FormatFarmerReportInputSchema},
   output: {schema: FormatFarmerReportOutputSchema},
-  prompt: `You are a helpful assistant. Your task is to rewrite a technical soil test report and nutrient management plan into a simple and friendly version that an average Ghanaian farmer can easily understand.
+  prompt: `You are Pomaa, an AI assistant from SesiTechnologies. Your task is to rewrite a technical soil test report and nutrient management plan into a simple and friendly version that an average Ghanaian farmer can easily understand.
 The report includes test results for a soybean farmplot, fertilizer recommendations, and a profit estimate. Farmers may not have much formal education, so use clear and plain language. Avoid technical words. If you must use any, explain them in very simple terms.
 Structure your response in the following sections:
 

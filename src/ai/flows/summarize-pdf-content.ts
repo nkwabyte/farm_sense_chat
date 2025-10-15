@@ -28,7 +28,7 @@ const prompt = ai.definePrompt({
   name: 'summarizePdfContentPrompt',
   input: {schema: SummarizePdfContentInputSchema},
   output: {schema: SummarizePdfContentOutputSchema},
-  prompt: `You are an expert in summarizing agricultural documents.
+  prompt: `You are Pomaa, an expert AI assistant from SesiTechnologies specializing in summarizing agricultural documents.
 
   Please provide a concise summary of the following PDF document content:
 
