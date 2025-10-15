@@ -1,7 +1,6 @@
 
 "use client";
 
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 
 type SuggestedQuestionsProps = {
@@ -11,22 +10,19 @@ type SuggestedQuestionsProps = {
 
 export function SuggestedQuestions({ questions, onQuestionSelect }: SuggestedQuestionsProps) {
     return (
-        <div className="relative mb-4">
-            <ScrollArea className="w-full whitespace-nowrap">
-                <div className="flex w-max space-x-4 pb-4">
-                    {questions.map((question, index) => (
-                        <Button 
-                            key={index} 
-                            variant="outline" 
-                            className="h-auto py-2 px-4 whitespace-normal text-left"
-                            onClick={() => onQuestionSelect(question)}
-                        >
-                            {question}
-                        </Button>
-                    ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+        <div className="space-y-3">
+            {questions.map((question, index) => (
+                <Button 
+                    key={index} 
+                    variant="outline" 
+                    className="w-full h-auto py-3 px-4 whitespace-normal text-left justify-start font-normal"
+                    onClick={() => onQuestionSelect(question)}
+                >
+                    {question}
+                </Button>
+            ))}
         </div>
     );
 }
+
+    

@@ -1,20 +1,22 @@
+
 "use client";
 
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent, RefObject } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { SendHorizonal, LoaderCircle, Paperclip } from 'lucide-react';
-import { Label } from './ui/label';
-import { Input } from './ui/input';
+import { SendHorizonal, LoaderCircle, Paperclip, ArrowUp } from 'lucide-react';
+import { FileBubble } from './file-bubble';
 
 type ChatInputProps = {
     onSendMessage: (message: string) => Promise<void>;
     isLoading: boolean;
     onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
     fileInputRef: RefObject<HTMLInputElement>;
+    activeFile: { name: string, dataUri: string } | null;
+    onRemoveFile: () => void;
 };
 
-export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef, activeFile, onRemoveFile }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputId = 'chat-file-upload';
@@ -46,31 +48,39 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
         }
     };
 
+    const handleFileButtonClick = () => {
+        fileInputRef.current?.click();
+    };
+
     return (
-        <form onSubmit={handleSubmit} className="relative flex items-start w-full gap-2 md:gap-4">
-            <Button asChild variant="outline" size="icon" className="shrink-0">
-                <Label htmlFor={fileInputId} className="cursor-pointer">
-                    <Paperclip className="w-5 h-5" />
-                    <span className="sr-only">Attach file</span>
-                </Label>
-            </Button>
-            <Input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={onFileChange} ref={fileInputRef} />
-            <div className="relative flex-1">
+        <div className='space-y-3'>
+             {activeFile && (
+                <FileBubble fileName={activeFile.name} onDismiss={onRemoveFile} />
+            )}
+            <form onSubmit={handleSubmit} className="relative w-full">
                 <Textarea
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask a question about agriculture or your document..."
-                    className="py-3 pl-4 text-base resize-none pr-14 max-h-48"
+                    placeholder="Ask me any question about agronomy, or upload your soil report and ask a question related to it."
+                    className="py-3 pl-12 text-base resize-none pr-14 max-h-48"
                     disabled={isLoading}
                     rows={1}
                     aria-label="Chat input"
                 />
-                <Button type="submit" size="icon" className="absolute shrink-0 bottom-2.5 right-2.5" disabled={isLoading || !message.trim()} aria-label="Send message">
-                    {isLoading ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <SendHorizonal className="w-5 h-5" />}
+                 <Button type="button" variant="ghost" size="icon" className="absolute shrink-0 bottom-2 left-2" onClick={handleFileButtonClick} disabled={isLoading}>
+                    <Paperclip className="w-5 h-5" />
+                    <span className="sr-only">Attach file</span>
+                 </Button>
+
+                <Button type="submit" size="icon" className="absolute shrink-0 bottom-2 right-2.5" disabled={isLoading || !message.trim()} aria-label="Send message">
+                    {isLoading ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
                 </Button>
-            </div>
-        </form>
+                <input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={onFileChange} ref={fileInputRef} />
+            </form>
+        </div>
     );
 }
+
+    

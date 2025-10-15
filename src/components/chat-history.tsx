@@ -55,3 +55,5 @@ export function ChatHistory({ sessions, activeChatId, setActiveChatId }: ChatHis
         </DropdownMenu>
     );
 }
+
+    
