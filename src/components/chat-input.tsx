@@ -48,7 +48,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
 
     return (
         <form onSubmit={handleSubmit} className="relative flex items-start w-full gap-2 md:gap-4">
-            <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <Button asChild variant="outline" size="icon" className="shrink-0">
                 <Label htmlFor={fileInputId} className="cursor-pointer">
                     <Paperclip className="w-5 h-5" />
                     <span className="sr-only">Attach file</span>
