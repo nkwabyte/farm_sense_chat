@@ -10,7 +10,7 @@ import { ChatSidebar, type ChatSession } from '@/components/chat-sidebar';
 import { nanoid } from 'nanoid';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ChatHeader } from '@/components/chat-header';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PanelLeft } from 'lucide-react';
 
@@ -162,7 +162,7 @@ export default function AgriChatPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId, activeChat]);
+  }, [toast, activeChatId, activeChat, handleNewChat]);
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
@@ -204,6 +204,8 @@ export default function AgriChatPage() {
         });
       });
       
+      handleRemoveFile();
+
       const response = await answerQuestionsFromPdf({
         question: message,
         pdfDataUri: currentSession?.pdfFile?.dataUri,
@@ -274,7 +276,7 @@ export default function AgriChatPage() {
       <div className={`grid h-screen w-full ${isMobile ? 'grid-cols-1' : 'grid-cols-[1fr_340px]'}`}>
         <div className="flex flex-col h-screen bg-background text-foreground">
           {isMobile && (
-            <ChatHeader title={activeChat?.title ?? "New Chat"}>
+            <ChatHeader>
                <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon">
@@ -283,6 +285,9 @@ export default function AgriChatPage() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0">
+                  <SheetHeader>
+                    <SheetTitle className='sr-only'>Conversations</SheetTitle>
+                  </SheetHeader>
                   {sidebarContent}
                 </SheetContent>
               </Sheet>
