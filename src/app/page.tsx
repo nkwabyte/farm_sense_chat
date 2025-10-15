@@ -298,8 +298,13 @@ export default function AgriChatPage() {
   );
 
   return (
-      <div className={`grid h-screen w-full ${isMobile ? 'grid-cols-1' : 'pl-72'}`}>
-        <div className="flex flex-col h-screen bg-background text-foreground">
+    <div className={`h-screen w-full ${isMobile ? '' : 'flex'}`}>
+        {!isMobile && (
+            <div className="w-72 flex-shrink-0">
+                {sidebarContent}
+            </div>
+        )}
+        <div className="flex flex-col flex-1 h-screen bg-background text-foreground">
           {isMobile && (
             <ChatHeader>
                <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -310,7 +315,7 @@ export default function AgriChatPage() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0">
-                  <SheetHeader>
+                   <SheetHeader className="p-4">
                     <SheetTitle className='sr-only'>Conversations</SheetTitle>
                   </SheetHeader>
                   {sidebarContent}
@@ -335,7 +340,8 @@ export default function AgriChatPage() {
             Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
           </footer>
         </div>
-        {!isMobile && sidebarContent}
-      </div>
+    </div>
   );
 }
+
+    
