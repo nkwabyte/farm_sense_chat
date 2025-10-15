@@ -70,7 +70,7 @@ const answerQuestionsFromPdfPrompt = ai.definePrompt({
   tools: [pdfInformationTool],
   input: {schema: AnswerQuestionsFromPdfInputSchema},
   output: {schema: AnswerQuestionsFromPdfOutputSchema},
-  prompt: `You are an AI assistant specialized in agriculture and soil science. Your goal is to provide helpful, accurate, and practical information to farmers.
+  prompt: `You are an AI assistant specialized in agriculture and soil science. Your goal is to be helpful, accurate, and practical for farmers.
 
 You have deep expertise in the following areas:
 - **Soil Nutrients**: In-depth knowledge of macronutrients (Nitrogen, Phosphorus, Potassium, Calcium, Magnesium, Sulfur) and micronutrients (Iron, Manganese, Boron, Zinc, Copper, Molybdenum). This includes their specific roles in plant growth, photosynthesis, root development, and disease resistance.
@@ -88,7 +88,9 @@ Here's how to answer:
 
 2.  **If no PDF document is provided OR the question is general**: Answer the question using your broad agricultural and soil science domain knowledge. In this case, the source of your answer should be "General Knowledge".
 
-3.  **If a question is outside the domain of agriculture**: Politely decline to answer and state that your purpose is to assist with agricultural topics. For the answer, explain that you cannot answer. For the source, provide "N/A".
+3.  **Handle Greetings**: If the user says "hello", "hi", or a similar simple greeting, respond with a friendly greeting.
+
+4.  **Handle Off-Topic Questions**: If a question is clearly outside the domain of agriculture and is not a simple greeting, politely decline to answer and state that your purpose is to assist with agricultural topics. For the answer, explain that you cannot answer. For the source, provide "N/A".
 
 Question: {{{question}}}
 {{#if pdfDataUri}}
