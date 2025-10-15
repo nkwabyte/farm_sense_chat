@@ -17,8 +17,7 @@ export const PdfUploader = forwardRef<HTMLInputElement, PdfUploaderProps>(({ onF
             <div className="p-4 rounded-full bg-accent/20">
               <UploadCloud className="w-12 h-12 text-accent" data-ai-hint="upload icon" />
             </div>
-            <p className="mt-6 text-xl text-foreground">Hey there! I'm Pomaa.</p>
-            <h2 className="mt-2 text-2xl font-semibold font-headline">Upload your Agriculture Document</h2>
+            <h2 className="mt-6 text-2xl font-semibold font-headline">Upload your Agriculture Document</h2>
             <p className="mt-2 text-muted-foreground">The AI will answer questions based on its content.</p>
             <Button asChild className="mt-6">
                 <Label htmlFor={fileInputId} className="cursor-pointer">

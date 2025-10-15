@@ -44,7 +44,12 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
             <div ref={chatContainerRef} className="flex-1 p-6 overflow-y-auto">
                 <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto justify-center">
                     {showUploader ? (
-                        <PdfUploader onFileChange={onFileChange} ref={fileInputRef} />
+                        <>
+                          <div className="text-center">
+                            <h1 className="text-2xl font-semibold">Hey there! I'm Pomaa.</h1>
+                          </div>
+                          <PdfUploader onFileChange={onFileChange} ref={fileInputRef} />
+                        </>
                     ) : (
                         <>
                             <div className="flex-grow" />
