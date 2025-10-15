@@ -22,9 +22,12 @@ export default function AgriChatPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showFileBubble, setShowFileBubble] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const activeChat = useMemo(() => {
+    return chatSessions.find(session => session.id === activeChatId);
+  }, [chatSessions, activeChatId]);
 
   useEffect(() => {
     try {
@@ -35,12 +38,7 @@ export default function AgriChatPage() {
         const parsedSessions = JSON.parse(savedSessions);
         setChatSessions(parsedSessions);
         if (savedActiveChatId) {
-          const activeId = JSON.parse(savedActiveChatId);
-          setActiveChatId(activeId);
-          const activeSession = parsedSessions.find((s: ChatSession) => s.id === activeId);
-          if (activeSession?.pdfFile) {
-            setShowFileBubble(true);
-          }
+          setActiveChatId(JSON.parse(savedActiveChatId));
         } else if (parsedSessions.length > 0) {
           setActiveChatId(parsedSessions[0].id);
         }
@@ -74,10 +72,6 @@ export default function AgriChatPage() {
     }
   }, [activeChatId]);
 
-  const activeChat = useMemo(() => {
-    return chatSessions.find(session => session.id === activeChatId);
-  }, [chatSessions, activeChatId]);
-
   const handleNewChat = useCallback(() => {
     const newChatId = nanoid();
     const newChatSession: ChatSession = {
@@ -88,7 +82,6 @@ export default function AgriChatPage() {
     };
     setChatSessions(prev => [newChatSession, ...prev]);
     setActiveChatId(newChatId);
-    setShowFileBubble(false);
   }, []);
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -119,7 +112,6 @@ export default function AgriChatPage() {
                 ? { ...session, pdfFile: newPdfFile, title: file.name }
                 : session
         ));
-        setShowFileBubble(true);
         
         toast({
           title: "File Uploaded",
@@ -149,8 +141,7 @@ export default function AgriChatPage() {
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
-    setShowFileBubble(false);
-
+    
     // Create a new chat if one doesn't exist
     if (!currentChatId) {
         const newChatId = nanoid();
@@ -239,9 +230,11 @@ export default function AgriChatPage() {
           session.id === activeChatId ? { ...session, pdfFile: null } : session
         )
       );
-      setShowFileBubble(false);
     }
   }, [activeChatId]);
+
+  // Show file bubble if there's a file but no messages yet
+  const showFileBubble = activeChat?.pdfFile && (activeChat?.messages.length ?? 0) === 0;
 
   return (
       <div className="flex flex-col h-screen bg-background text-foreground">
