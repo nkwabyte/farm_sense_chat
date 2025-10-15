@@ -8,6 +8,11 @@ import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
 import { ChatInterface } from '@/components/chat-interface';
 import { ChatSidebar, type ChatSession } from '@/components/chat-sidebar';
 import { nanoid } from 'nanoid';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ChatHeader } from '@/components/chat-header';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { PanelLeft } from 'lucide-react';
 
 const suggestedQuestions = [
     "What is the importance of soil pH?",
@@ -20,8 +25,10 @@ export default function AgriChatPage() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const activeChat = useMemo(() => {
     return chatSessions.find(session => session.id === activeChatId);
@@ -84,7 +91,8 @@ export default function AgriChatPage() {
     };
     setChatSessions(prev => [newChatSession, ...prev]);
     setActiveChatId(newChatId);
-  }, []);
+    if(isMobile) setIsSidebarOpen(false);
+  }, [isMobile]);
 
   const handleDeleteChat = useCallback((sessionId: string) => {
     setChatSessions(prev => {
@@ -244,10 +252,42 @@ export default function AgriChatPage() {
       );
     }
   }, [activeChatId]);
+  
+  const onSelectChat = (id: string) => {
+    setActiveChatId(id);
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  }
+
+  const sidebarContent = (
+    <ChatSidebar 
+      sessions={chatSessions} 
+      activeChatId={activeChatId} 
+      setActiveChatId={onSelectChat}
+      onNewChat={handleNewChat}
+      onDeleteChat={handleDeleteChat}
+    />
+  );
 
   return (
-      <div className="grid h-screen w-full grid-cols-[1fr_340px]">
+      <div className={`grid h-screen w-full ${isMobile ? 'grid-cols-1' : 'grid-cols-[1fr_340px]'}`}>
         <div className="flex flex-col h-screen bg-background text-foreground">
+          {isMobile && (
+            <ChatHeader title={activeChat?.title ?? "New Chat"}>
+               <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <PanelLeft />
+                    <span className="sr-only">Toggle Menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0">
+                  {sidebarContent}
+                </SheetContent>
+              </Sheet>
+            </ChatHeader>
+          )}
           <main className="flex-1 overflow-hidden">
               <ChatInterface
                 messages={activeChat?.messages ?? []}
@@ -265,15 +305,7 @@ export default function AgriChatPage() {
             Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
           </footer>
         </div>
-        <ChatSidebar 
-          sessions={chatSessions} 
-          activeChatId={activeChatId} 
-          setActiveChatId={setActiveChatId}
-          onNewChat={handleNewChat}
-          onDeleteChat={handleDeleteChat}
-        />
+        {!isMobile && sidebarContent}
       </div>
   );
 }
-
-    
