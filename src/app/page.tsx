@@ -101,17 +101,34 @@ export default function AgriChatPage() {
         if (newSessions.length > 0) {
           setActiveChatId(newSessions[0].id);
         } else {
-          setActiveChatId(null);
-          handleNewChat(); // Create a new chat if all are deleted
+          // If all chats are deleted, create a new one
+          const newChatId = nanoid();
+          const newChatSession: ChatSession = {
+            id: newChatId,
+            messages: [],
+            pdfFile: null,
+            title: 'New Chat'
+          };
+          setActiveChatId(newChatId);
+          return [newChatSession];
         }
       }
       return newSessions;
     });
-  }, [activeChatId, handleNewChat]);
+  }, [activeChatId]);
+
+  const handleRenameChat = useCallback((sessionId: string, newTitle: string) => {
+    setChatSessions(prev => 
+      prev.map(session => 
+        session.id === sessionId ? { ...session, title: newTitle } : session
+      )
+    );
+  }, []);
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     let currentActiveChatId = activeChatId;
 
+    // Create a new chat if the current one already has messages, or if no chat exists
     if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0)) {
         const newChatId = nanoid();
         const newChatSession: ChatSession = {
@@ -159,14 +176,16 @@ export default function AgriChatPage() {
       });
     }
     
+    // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId, activeChat, handleNewChat]);
+  }, [toast, activeChatId, activeChat]);
 
   const handleSendMessage = async (message: string) => {
     let currentChatId = activeChatId;
     
+    // Create new chat if none exists
     if (!currentChatId) {
         const newChatId = nanoid();
         const newChatSession: ChatSession = {
@@ -189,6 +208,7 @@ export default function AgriChatPage() {
           ? { 
               ...session, 
               messages: [...session.messages, userMessage],
+              // Set title from first message
               title: session.messages.length === 0 ? message.substring(0, 30) + "..." : session.title,
             }
           : session
@@ -197,6 +217,7 @@ export default function AgriChatPage() {
     setIsLoading(true);
 
     try {
+      // It's important to get the most up-to-date session state
       const currentSession = await new Promise<ChatSession | undefined>(resolve => {
         setChatSessions(currentSessions => {
             resolve(currentSessions.find(s => s.id === currentChatId));
@@ -204,8 +225,6 @@ export default function AgriChatPage() {
         });
       });
       
-      handleRemoveFile();
-
       const response = await answerQuestionsFromPdf({
         question: message,
         pdfDataUri: currentSession?.pdfFile?.dataUri,
@@ -233,6 +252,7 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
+      // Remove the user message if AI fails
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
@@ -242,6 +262,10 @@ export default function AgriChatPage() {
       );
     } finally {
       setIsLoading(false);
+      // Remove the file from the session after the first message related to it is sent
+      if (activeChatId) {
+        handleRemoveFile();
+      }
     }
   };
 
@@ -269,11 +293,12 @@ export default function AgriChatPage() {
       setActiveChatId={onSelectChat}
       onNewChat={handleNewChat}
       onDeleteChat={handleDeleteChat}
+      onRenameChat={handleRenameChat}
     />
   );
 
   return (
-      <div className={`grid h-screen w-full ${isMobile ? 'grid-cols-1' : 'grid-cols-[1fr_340px]'}`}>
+      <div className={`grid h-screen w-full ${isMobile ? 'grid-cols-1' : 'pl-72'}`}>
         <div className="flex flex-col h-screen bg-background text-foreground">
           {isMobile && (
             <ChatHeader>
@@ -303,7 +328,7 @@ export default function AgriChatPage() {
                 suggestedQuestions={suggestedQuestions}
                 activeFile={activeChat?.pdfFile ?? null}
                 onRemoveFile={handleRemoveFile}
-                key={activeChatId}
+                key={activeChatId} // Re-mounts the component when chat changes
               />
           </main>
           <footer className="px-4 py-2 text-xs text-center border-t text-muted-foreground">
