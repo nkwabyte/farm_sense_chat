@@ -262,10 +262,7 @@ export default function AgriChatPage() {
       );
     } finally {
       setIsLoading(false);
-      // Remove the file from the session after the first message related to it is sent
-      if (activeChatId) {
-        handleRemoveFile();
-      }
+      handleRemoveFile();
     }
   };
 
@@ -298,7 +295,7 @@ export default function AgriChatPage() {
   );
 
   return (
-    <div className={`h-screen w-full ${isMobile ? '' : 'flex'}`}>
+    <div className="flex h-screen w-full">
         {!isMobile && (
             <div className="w-72 flex-shrink-0">
                 {sidebarContent}
@@ -343,5 +340,3 @@ export default function AgriChatPage() {
     </div>
   );
 }
-
-    

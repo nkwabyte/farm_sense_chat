@@ -23,7 +23,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
 
     useEffect(() => {
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = 'auto'; // Reset height
             const scrollHeight = textareaRef.current.scrollHeight;
             textareaRef.current.style.height = `${scrollHeight}px`;
         }
@@ -35,6 +35,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
             const currentMessage = message.trim();
             setMessage('');
             if (textareaRef.current) {
+                // Reset height after sending
                 textareaRef.current.style.height = 'auto';
             }
             await onSendMessage(currentMessage);
@@ -64,7 +65,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask me any question about agronomy, or upload your soil report and ask a question related to it."
-                    className="py-3 pl-12 text-base resize-none pr-14 max-h-48"
+                    className="py-3 pl-12 text-base resize-none pr-14 max-h-48 min-h-[52px]"
                     disabled={isLoading}
                     rows={1}
                     aria-label="Chat input"
@@ -82,5 +83,3 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
         </div>
     );
 }
-
-    
