@@ -247,7 +247,7 @@ export default function AgriChatPage() {
       <div className="flex flex-col h-screen bg-background text-foreground">
         <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold font-headline">AgriChat PDF</h1>
+                {/* Title removed as requested */}
             </div>
             <div className="flex items-center gap-4">
                 <ChatHistory sessions={chatSessions} activeChatId={activeChatId} setActiveChatId={setActiveChatId}/>
