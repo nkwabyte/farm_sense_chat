@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 export type ChatSession = {
@@ -35,7 +36,7 @@ type ChatSidebarProps = {
 export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat, onDeleteChat }: ChatSidebarProps) {
     
     return (
-        <div className="flex flex-col h-screen p-4 pt-12 border-l bg-muted/20">
+        <div className="flex flex-col h-screen p-4 border-l pt-14 bg-muted/20">
             <Button variant="outline" onClick={onNewChat} className='w-full'>
                 <PlusCircle className="w-5 h-5 mr-2"/>
                 New Chat
