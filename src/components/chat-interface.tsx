@@ -43,7 +43,6 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                 <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto justify-center">
                     {showUploader ? (
                         <div className="text-center">
-                            <h1 className="text-3xl font-bold tracking-tight">Pomaa AI</h1>
                             <p className="mt-2 text-lg text-muted-foreground">
                                 An agricultural AI assistant to help you interpret soil reports and answer your agronomy questions, summarize background, and more
                             </p>
