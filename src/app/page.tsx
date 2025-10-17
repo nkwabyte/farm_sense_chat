@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback, useRef, ChangeEvent, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { type Message } from '@/components/chat-interface';
 import { answerQuestionsFromPdf } from '@/ai/flows/answer-questions-from-pdf';
@@ -29,6 +30,8 @@ export default function AgriChatPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+  const searchParams = useSearchParams();
+  const bgColor = searchParams.get('bgcolor');
 
   const activeChat = useMemo(() => {
     return chatSessions.find(session => session.id === activeChatId);
@@ -295,48 +298,53 @@ export default function AgriChatPage() {
   );
 
   return (
-    <div className="flex h-screen w-full">
-        {!isMobile && (
-            <div className="w-72 flex-shrink-0">
-                {sidebarContent}
-            </div>
-        )}
-        <div className="flex flex-col flex-1 h-screen bg-background text-foreground">
-          {isMobile && (
-            <ChatHeader>
-               <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <PanelLeft />
-                    <span className="sr-only">Toggle Menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0">
-                   <SheetHeader className="p-4">
-                    <SheetTitle className='sr-only'>Conversations</SheetTitle>
+    <div className="flex w-screen h-screen">
+      <div 
+        className="flex flex-col flex-1 h-screen bg-background text-foreground"
+        style={bgColor ? { backgroundColor: bgColor } : {}}
+      >
+        {isMobile && (
+          <ChatHeader>
+              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <PanelLeft />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0">
+                  <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Conversations</SheetTitle>
                   </SheetHeader>
-                  {sidebarContent}
-                </SheetContent>
-              </Sheet>
-            </ChatHeader>
-          )}
-          <main className="flex-1 overflow-hidden">
-              <ChatInterface
-                messages={activeChat?.messages ?? []}
-                isLoading={isLoading}
-                onSendMessage={handleSendMessage}
-                onFileChange={handleFileChange}
-                fileInputRef={fileInputRef}
-                suggestedQuestions={suggestedQuestions}
-                activeFile={activeChat?.pdfFile ?? null}
-                onRemoveFile={handleRemoveFile}
-                key={activeChatId} // Re-mounts the component when chat changes
-              />
-          </main>
-          <footer className="px-4 py-2 text-xs text-center border-t text-muted-foreground">
-            Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
-          </footer>
-        </div>
+                {sidebarContent}
+              </SheetContent>
+            </Sheet>
+          </ChatHeader>
+        )}
+        <main className="flex-1 overflow-hidden">
+            <ChatInterface
+              messages={activeChat?.messages ?? []}
+              isLoading={isLoading}
+              onSendMessage={handleSendMessage}
+              onFileChange={handleFileChange}
+              fileInputRef={fileInputRef}
+              suggestedQuestions={suggestedQuestions}
+              activeFile={activeChat?.pdfFile ?? null}
+              onRemoveFile={handleRemoveFile}
+              key={activeChatId} // Re-mounts the component when chat changes
+            />
+        </main>
+        <footer className="px-4 py-2 text-xs text-center border-t text-muted-foreground">
+          Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+        </footer>
+      </div>
+      {!isMobile && (
+          <div className="w-72 flex-shrink-0">
+              {sidebarContent}
+          </div>
+      )}
     </div>
   );
 }
+
+    

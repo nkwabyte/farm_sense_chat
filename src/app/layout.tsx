@@ -1,8 +1,9 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Inter as FontSans } from "next/font/google"
+import { Montserrat as FontSans } from "next/font/google"
 import { cn } from "@/lib/utils"
+import { Suspense } from 'react';
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -22,14 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com"/>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
-        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet"></link>
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        {children}
+        <Suspense fallback={<div>Loading...</div>}>
+          {children}
+        </Suspense>
         <Toaster />
       </body>
     </html>
   );
 }
+
+    
