@@ -46,12 +46,12 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                             <p className="mt-2 text-lg text-muted-foreground">
                                 An agricultural AI assistant to help you interpret soil reports and answer your agronomy questions, summarize background, and more
                             </p>
-                            <div className="max-w-xl mx-auto mt-12">
+                            <div className="max-w-xl mx-auto mt-8">
                                 <SuggestedQuestions 
                                     questions={suggestedQuestions}
                                     onQuestionSelect={onSendMessage}
                                 />
-                                <div className="mt-8">
+                                <div className="mt-6">
                                   <PdfUploader onFileChange={onFileChange} ref={fileInputRef} />
                                 </div>
                             </div>
