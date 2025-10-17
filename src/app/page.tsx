@@ -296,11 +296,6 @@ export default function AgriChatPage() {
 
   return (
     <div className="flex h-screen w-full">
-        {!isMobile && (
-            <div className="w-72 flex-shrink-0">
-                {sidebarContent}
-            </div>
-        )}
         <div className="flex flex-col flex-1 h-screen bg-background text-foreground">
           {isMobile && (
             <ChatHeader>
@@ -337,6 +332,13 @@ export default function AgriChatPage() {
             Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
           </footer>
         </div>
+        {!isMobile && (
+            <div className="w-72 flex-shrink-0">
+                {sidebarContent}
+            </div>
+        )}
     </div>
   );
 }
+
+    
