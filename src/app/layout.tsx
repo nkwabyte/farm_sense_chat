@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { Montserrat as FontSans } from "next/font/google"
 import { cn } from "@/lib/utils"
+import { Suspense } from 'react';
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -24,9 +25,13 @@ export default function RootLayout({
       <head>
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        {children}
+        <Suspense fallback={<div>Loading...</div>}>
+          {children}
+        </Suspense>
         <Toaster />
       </body>
     </html>
   );
 }
+
+    
