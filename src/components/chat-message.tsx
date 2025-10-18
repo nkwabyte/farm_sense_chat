@@ -37,7 +37,7 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
         
         return (
             <ReactMarkdown
-                className="prose dark:prose-invert prose-p:whitespace-pre-wrap"
+                className="prose dark:prose-invert prose-sm leading-snug prose-p:whitespace-pre-wrap"
                 remarkPlugins={[remarkGfm]}
             >
                 {content}
@@ -48,9 +48,9 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
     return (
         <div className={cn('flex items-start gap-4 animate-in fade-in text-sm', isUser ? 'justify-end' : '')}>
             {!isUser && (
-                <Avatar className="w-10 h-10 border bg-background">
+                <Avatar className="w-8 h-8 border bg-background">
                     <AvatarFallback className="bg-accent text-accent-foreground">
-                        <Bot className="w-5 h-5" />
+                        <Bot className="w-4 h-4" />
                     </AvatarFallback>
                 </Avatar>
             )}
@@ -61,7 +61,7 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
                             <CardTitle className="text-xl">Farmer-Friendly Report</CardTitle>
                         </CardHeader>
                     )}
-                    <CardContent className="p-4">
+                    <CardContent className="p-3">
                         {renderContent()}
                     </CardContent>
                     {!isUser && source && (
@@ -72,9 +72,9 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
                 </Card>
             </div>
             {isUser && (
-                <Avatar className="w-10 h-10 border bg-background">
+                <Avatar className="w-8 h-8 border bg-background">
                     <AvatarFallback>
-                        <User className="w-5 h-5" />
+                        <User className="w-4 h-4" />
                     </AvatarFallback>
                 </Avatar>
             )}
@@ -85,9 +85,9 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
 export function ChatMessageLoading() {
     return (
         <div className="flex items-start gap-4 animate-in fade-in">
-            <Avatar className="w-10 h-10 border bg-background">
+            <Avatar className="w-8 h-8 border bg-background">
                 <AvatarFallback className="bg-accent text-accent-foreground">
-                    <Bot className="w-5 h-5" />
+                    <Bot className="w-4 h-4" />
                 </AvatarFallback>
             </Avatar>
             <div className="max-w-xl">
