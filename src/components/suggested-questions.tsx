@@ -10,7 +10,7 @@ type SuggestedQuestionsProps = {
 
 export function SuggestedQuestions({ questions, onQuestionSelect }: SuggestedQuestionsProps) {
     return (
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
             {questions.map((question, index) => (
                 <Button 
                     key={index} 
