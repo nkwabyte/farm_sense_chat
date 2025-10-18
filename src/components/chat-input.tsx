@@ -65,7 +65,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask me any question about agronomy, or upload your soil report and ask a question related to it."
-                    className="py-3 pl-12 text-base resize-none pr-14 max-h-48 min-h-[52px]"
+                    className="py-3 pl-12 text-sm leading-snug resize-none pr-14 max-h-24 min-h-[52px]"
                     disabled={isLoading}
                     rows={1}
                     aria-label="Chat input"
