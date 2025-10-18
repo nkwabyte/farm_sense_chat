@@ -46,7 +46,7 @@ export function ChatMessage({ role, content, source, isReport }: ChatMessageProp
     };
 
     return (
-        <div className={cn('flex items-start gap-4 animate-in fade-in', isUser ? 'justify-end' : '')}>
+        <div className={cn('flex items-start gap-4 animate-in fade-in text-sm', isUser ? 'justify-end' : '')}>
             {!isUser && (
                 <Avatar className="w-10 h-10 border bg-background">
                     <AvatarFallback className="bg-accent text-accent-foreground">

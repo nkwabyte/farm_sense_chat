@@ -298,14 +298,14 @@ export default function AgriChatPage() {
   );
 
   return (
-    <div className="flex w-screen h-screen">
-      <div 
-        className="flex flex-col flex-1 h-screen bg-background text-foreground"
-        style={bgColor ? { backgroundColor: bgColor } : {}}
-      >
+    <div 
+      className="flex h-screen bg-background text-foreground"
+      style={bgColor ? { backgroundColor: bgColor } : {}}
+    >
+      <div className="flex flex-1 flex-col overflow-hidden">
         {isMobile && (
           <ChatHeader>
-              <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <PanelLeft />
@@ -313,9 +313,9 @@ export default function AgriChatPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0">
-                  <SheetHeader className="p-4 border-b">
-                    <SheetTitle>Conversations</SheetTitle>
-                  </SheetHeader>
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Conversations</SheetTitle>
+                </SheetHeader>
                 {sidebarContent}
               </SheetContent>
             </Sheet>
@@ -334,17 +334,16 @@ export default function AgriChatPage() {
               key={activeChatId} // Re-mounts the component when chat changes
             />
         </main>
-        <footer className="px-4 py-2 text-xs text-center border-t text-muted-foreground">
+        <footer className="px-4 py-2 text-[11px] text-center border-t text-muted-foreground">
           Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
         </footer>
       </div>
+
       {!isMobile && (
-          <div className="w-72 flex-shrink-0">
-              {sidebarContent}
-          </div>
+        <div className="w-72 flex-shrink-0">
+            {sidebarContent}
+        </div>
       )}
     </div>
   );
 }
-
-    
