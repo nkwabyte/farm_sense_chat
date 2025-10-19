@@ -133,7 +133,7 @@ export default function AgriChatPage() {
     let currentActiveChatId = activeChatId;
 
     // Create a new chat if the current one has a file or has messages.
-    if (!currentActiveChatId || activeChat?.pdfFile || (activeChat && activeChat.messages.length > 0)) {
+    if (!currentActiveChatId || (activeChat?.pdfFile && activeChat.messages.length > 0 && !activeChat.pdfFile)) {
         const newChatId = nanoid();
         const file = event.target.files?.[0];
         const newChatSession: ChatSession = {
@@ -185,7 +185,7 @@ export default function AgriChatPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId, activeChat, handleNewChat]);
+  }, [toast, activeChatId, activeChat]);
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -194,10 +194,16 @@ export default function AgriChatPage() {
     
     // Create new chat if none exists
     if (!currentChatId) {
-      handleNewChat();
-      // We need to get the new chat id, which is not available immediately.
-      // Awaiting state update is tricky. Let's get it from the sessions.
-      currentChatId = chatSessions[0].id;
+      const newChatId = nanoid();
+      const newChatSession: ChatSession = {
+        id: newChatId,
+        messages: [],
+        pdfFile: null,
+        title: 'New Chat'
+      };
+      setChatSessions(prev => [newChatSession, ...prev]);
+      setActiveChatId(newChatId);
+      currentChatId = newChatId;
     }
 
     const userMessageId = nanoid();
@@ -344,30 +350,28 @@ export default function AgriChatPage() {
              </div>
         ) : (
             <div className='flex w-full'>
-                <main className="flex-1 overflow-hidden">
-                    <div className='flex flex-col h-full'>
-                        <div className='flex-1 overflow-auto'>
-                        <ChatInterface
-                            messages={activeChat?.messages ?? []}
-                            isLoading={isLoading}
-                            onSendMessage={handleSendMessage}
-                            onFileChange={handleFileChange}
-                            fileInputref={fileInputRef}
-                            suggestedQuestions={suggestedQuestions}
-                            activeFile={activeChat?.pdfFile ?? null}
-                            onRemoveFile={handleRemoveFile}
-                            onSuggestedQuestion={handleSuggestedQuestion}
-                            inputValue={inputValue}
-                            setInputValue={setInputValue}
-                            key={activeChatId} // Re-mounts the component when chat changes
-                        />
-                        </div>
-                        <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
-                            Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
-                        </footer>
+                <main className="flex-1 flex flex-col overflow-hidden">
+                    <div className='flex-1 overflow-auto'>
+                    <ChatInterface
+                        messages={activeChat?.messages ?? []}
+                        isLoading={isLoading}
+                        onSendMessage={handleSendMessage}
+                        onFileChange={handleFileChange}
+                        fileInputRef={fileInputRef}
+                        suggestedQuestions={suggestedQuestions}
+                        activeFile={activeChat?.pdfFile ?? null}
+                        onRemoveFile={handleRemoveFile}
+                        onSuggestedQuestion={handleSuggestedQuestion}
+                        inputValue={inputValue}
+                        setInputValue={setInputValue}
+                        key={activeChatId} // Re-mounts the component when chat changes
+                    />
                     </div>
+                    <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
+                        Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+                    </footer>
                 </main>
-                <aside className="w-80 lg:w-96 bg-muted/20">
+                <aside className="w-80 lg:w-96 bg-muted/20 border-l">
                     {sidebarContent}
                 </aside>
             </div>
