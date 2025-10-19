@@ -24,9 +24,24 @@ type ChatInterfaceProps = {
     suggestedQuestions: string[];
     activeFile: { name: string; dataUri: string } | null;
     onRemoveFile: () => void;
+    onSuggestedQuestion: (question: string) => void;
+    inputValue: string;
+    setInputValue: (value: string) => void;
 };
 
-export const ChatInterface = memo(function ChatInterface({ messages, isLoading, onSendMessage, onFileChange, fileInputRef, suggestedQuestions, activeFile, onRemoveFile }: ChatInterfaceProps) {
+export const ChatInterface = memo(function ChatInterface({ 
+    messages, 
+    isLoading, 
+    onSendMessage, 
+    onFileChange, 
+    fileInputRef, 
+    suggestedQuestions, 
+    activeFile, 
+    onRemoveFile,
+    onSuggestedQuestion,
+    inputValue,
+    setInputValue
+}: ChatInterfaceProps) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
@@ -43,13 +58,13 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                 <div className="flex flex-col min-h-full max-w-4xl gap-6 mx-auto justify-center">
                     {showUploader ? (
                         <div className="text-center">
-                            <p className="mt-2 text-base text-muted-foreground">
+                            <p className="mt-2 text-sm text-muted-foreground">
                                 An agricultural AI assistant to help you interpret soil reports and answer your agronomy questions, summarize background, and more
                             </p>
                             <div className="max-w-xl mx-auto mt-4">
                                 <SuggestedQuestions 
                                     questions={suggestedQuestions}
-                                    onQuestionSelect={onSendMessage}
+                                    onQuestionSelect={onSuggestedQuestion}
                                 />
                                 <div className="mt-4">
                                   <PdfUploader onFileChange={onFileChange} ref={fileInputRef} />
@@ -76,6 +91,8 @@ export const ChatInterface = memo(function ChatInterface({ messages, isLoading, 
                         fileInputRef={fileInputRef}
                         activeFile={activeFile}
                         onRemoveFile={onRemoveFile}
+                        inputValue={inputValue}
+                        setInputValue={setInputValue}
                     />
                 </div>
             </div>

@@ -27,6 +27,7 @@ export default function AgriChatPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
@@ -130,15 +131,16 @@ export default function AgriChatPage() {
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     let currentActiveChatId = activeChatId;
+    let shouldCreateNewChat = !currentActiveChatId || (activeChat && activeChat.messages.length > 0);
 
-    // Create a new chat if the current one already has messages, or if no chat exists
-    if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0)) {
+    if (shouldCreateNewChat) {
         const newChatId = nanoid();
+        const file = event.target.files?.[0];
         const newChatSession: ChatSession = {
             id: newChatId,
             messages: [],
-            pdfFile: null,
-            title: 'New Chat'
+            pdfFile: null, 
+            title: file ? file.name : 'New Chat'
         };
         setChatSessions(prev => [newChatSession, ...prev]);
         setActiveChatId(newChatId);
@@ -154,7 +156,7 @@ export default function AgriChatPage() {
 
         setChatSessions(prev => prev.map(session =>
             session.id === currentActiveChatId
-                ? { ...session, pdfFile: newPdfFile, title: file.name }
+                ? { ...session, pdfFile: newPdfFile, title: session.title === 'New Chat' || !session.pdfFile ? file.name : session.title }
                 : session
         ));
         
@@ -179,31 +181,35 @@ export default function AgriChatPage() {
       });
     }
     
-    // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }, [toast, activeChatId, activeChat]);
 
   const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return;
+
     let currentChatId = activeChatId;
     
-    // Create new chat if none exists
     if (!currentChatId) {
-        const newChatId = nanoid();
-        const newChatSession: ChatSession = {
-            id: newChatId,
-            messages: [],
-            pdfFile: null,
-            title: message.substring(0, 30) + "..."
-        };
-        setChatSessions(prev => [newChatSession, ...prev]);
-        setActiveChatId(newChatId);
-        currentChatId = newChatId;
+      const newChatId = nanoid();
+      const newChatSession: ChatSession = {
+        id: newChatId,
+        messages: [],
+        pdfFile: null,
+        title: 'New Chat'
+      };
+      setChatSessions(prev => [newChatSession, ...prev]);
+      setActiveChatId(newChatId);
+      currentChatId = newChatId;
     }
 
     const userMessageId = nanoid();
     const userMessage: Message = { role: 'user', content: message, id: userMessageId };
+
+    const currentSession = chatSessions.find(s => s.id === currentChatId);
+    const pdfDataUri = currentSession?.pdfFile?.dataUri;
+    const pdfName = currentSession?.pdfFile?.name;
 
     setChatSessions(prev =>
       prev.map(session =>
@@ -211,39 +217,31 @@ export default function AgriChatPage() {
           ? { 
               ...session, 
               messages: [...session.messages, userMessage],
-              // Set title from first message
-              title: session.messages.length === 0 ? message.substring(0, 30) + "..." : session.title,
+              title: session.messages.length === 0 && session.title === 'New Chat' ? message.substring(0, 30) + "..." : session.title,
             }
           : session
       )
     );
     setIsLoading(true);
+    setInputValue('');
 
     try {
-      // It's important to get the most up-to-date session state
-      const currentSession = await new Promise<ChatSession | undefined>(resolve => {
-        setChatSessions(currentSessions => {
-            resolve(currentSessions.find(s => s.id === currentChatId));
-            return currentSessions;
-        });
-      });
-      
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: currentSession?.pdfFile?.dataUri,
+        pdfDataUri: pdfDataUri,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source?.replace('ExamplePDF.pdf', currentSession?.pdfFile?.name ?? "General Knowledge"),
+        source: response.source?.replace('ExamplePDF.pdf', pdfName ?? "General Knowledge"),
         id: nanoid(),
       };
       
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
-            ? { ...session, messages: [...session.messages, aiMessage] }
+            ? { ...session, messages: [...session.messages, aiMessage], pdfFile: null } // Clear file after sending
             : session
         )
       );
@@ -255,7 +253,6 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
-      // Remove the user message if AI fails
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
@@ -265,7 +262,6 @@ export default function AgriChatPage() {
       );
     } finally {
       setIsLoading(false);
-      handleRemoveFile();
     }
   };
 
@@ -286,7 +282,11 @@ export default function AgriChatPage() {
     }
   }
 
-  const sidebarContent = (
+  const handleSuggestedQuestion = (question: string) => {
+    setInputValue(question);
+  }
+
+  const sidebar = (
     <ChatSidebar 
       sessions={chatSessions} 
       activeChatId={activeChatId} 
@@ -297,53 +297,68 @@ export default function AgriChatPage() {
     />
   );
 
+  const chatInterface = (
+    <ChatInterface
+      messages={activeChat?.messages ?? []}
+      isLoading={isLoading}
+      onSendMessage={handleSendMessage}
+      onFileChange={handleFileChange}
+      fileInputRef={fileInputRef}
+      suggestedQuestions={suggestedQuestions}
+      activeFile={activeChat?.pdfFile ?? null}
+      onRemoveFile={handleRemoveFile}
+      onSuggestedQuestion={handleSuggestedQuestion}
+      inputValue={inputValue}
+      setInputValue={setInputValue}
+      key={activeChatId}
+    />
+  );
+
   return (
     <div 
       className="flex h-screen bg-background text-foreground"
       style={bgColor ? { backgroundColor: bgColor } : {}}
     >
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {isMobile && (
-          <ChatHeader>
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <PanelLeft />
-                  <span className="sr-only">Toggle Menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0">
-                <SheetHeader className="p-4 border-b">
-                  <SheetTitle>Conversations</SheetTitle>
-                </SheetHeader>
-                {sidebarContent}
-              </SheetContent>
-            </Sheet>
-          </ChatHeader>
+        {isMobile ? (
+             <div className="flex-1 flex flex-col overflow-hidden">
+                <ChatHeader>
+                    <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                        <PanelLeft />
+                        <span className="sr-only">Toggle Menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-0">
+                        <SheetHeader className="p-4 border-b">
+                        <SheetTitle>Conversations</SheetTitle>
+                        </SheetHeader>
+                        {sidebar}
+                    </SheetContent>
+                    </Sheet>
+                </ChatHeader>
+                <main className="flex-1 overflow-hidden">
+                    {chatInterface}
+                </main>
+                <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
+                    Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+                </footer>
+             </div>
+        ) : (
+            <div className='flex w-full h-full'>
+                <div className="flex flex-col flex-1 overflow-hidden">
+                    <div className='flex-1 overflow-auto'>
+                      {chatInterface}
+                    </div>
+                    <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground shrink-0">
+                        Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+                    </footer>
+                </div>
+                <aside className="w-80 lg:w-96 bg-muted/40 border-l">
+                    {sidebar}
+                </aside>
+            </div>
         )}
-        <main className="flex-1 overflow-hidden">
-            <ChatInterface
-              messages={activeChat?.messages ?? []}
-              isLoading={isLoading}
-              onSendMessage={handleSendMessage}
-              onFileChange={handleFileChange}
-              fileInputRef={fileInputRef}
-              suggestedQuestions={suggestedQuestions}
-              activeFile={activeChat?.pdfFile ?? null}
-              onRemoveFile={handleRemoveFile}
-              key={activeChatId} // Re-mounts the component when chat changes
-            />
-        </main>
-        <footer className="px-4 py-2 text-[11px] text-center border-t text-muted-foreground">
-          Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
-        </footer>
-      </div>
-
-      {!isMobile && (
-        <div className="w-72 flex-shrink-0">
-            {sidebarContent}
-        </div>
-      )}
     </div>
   );
 }

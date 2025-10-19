@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent, RefObject } from 'react';
+import { useRef, useEffect, type FormEvent, type KeyboardEvent, ChangeEvent, RefObject } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { SendHorizonal, LoaderCircle, Paperclip, ArrowUp } from 'lucide-react';
@@ -14,10 +14,11 @@ type ChatInputProps = {
     fileInputRef: RefObject<HTMLInputElement>;
     activeFile: { name: string, dataUri: string } | null;
     onRemoveFile: () => void;
+    inputValue: string;
+    setInputValue: (value: string) => void;
 };
 
-export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef, activeFile, onRemoveFile }: ChatInputProps) {
-    const [message, setMessage] = useState('');
+export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef, activeFile, onRemoveFile, inputValue, setInputValue }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputId = 'chat-file-upload';
 
@@ -25,20 +26,22 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'; // Reset height
             const scrollHeight = textareaRef.current.scrollHeight;
-            textareaRef.current.style.height = `${scrollHeight}px`;
+            const maxHeight = 96; // Corresponds to max-h-24
+            textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
         }
-    }, [message]);
+    }, [inputValue]);
+    
+    // Focus textarea when inputValue changes from a suggested question
+    useEffect(() => {
+        if(inputValue) {
+            textareaRef.current?.focus();
+        }
+    }, [inputValue])
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (message.trim() && !isLoading) {
-            const currentMessage = message.trim();
-            setMessage('');
-            if (textareaRef.current) {
-                // Reset height after sending
-                textareaRef.current.style.height = 'auto';
-            }
-            await onSendMessage(currentMessage);
+        if (inputValue.trim() && !isLoading) {
+            await onSendMessage(inputValue.trim());
         }
     };
     
@@ -61,8 +64,8 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
             <form onSubmit={handleSubmit} className="relative w-full">
                 <Textarea
                     ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask me any question about agronomy, or upload your soil report and ask a question related to it."
                     className="py-3 pl-12 text-sm leading-snug resize-none pr-14 max-h-24 min-h-[52px]"
@@ -75,7 +78,7 @@ export function ChatInput({ onSendMessage, isLoading, onFileChange, fileInputRef
                     <span className="sr-only">Attach file</span>
                  </Button>
 
-                <Button type="submit" size="icon" className="absolute shrink-0 bottom-2 right-2.5" disabled={isLoading || !message.trim()} aria-label="Send message">
+                <Button type="submit" size="icon" className="absolute shrink-0 bottom-2 right-2.5" disabled={isLoading || !inputValue.trim()} aria-label="Send message">
                     {isLoading ? <LoaderCircle className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
                 </Button>
                 <input id={fileInputId} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={onFileChange} ref={fileInputRef} />
