@@ -132,14 +132,15 @@ export default function AgriChatPage() {
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     let currentActiveChatId = activeChatId;
 
-    // Create a new chat if the current one already has messages, or if no chat exists
-    if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0 && !activeChat.pdfFile)) {
+    // Create a new chat if the current one has a file or has messages.
+    if (!currentActiveChatId || activeChat?.pdfFile || (activeChat && activeChat.messages.length > 0)) {
         const newChatId = nanoid();
+        const file = event.target.files?.[0];
         const newChatSession: ChatSession = {
             id: newChatId,
             messages: [],
-            pdfFile: null,
-            title: 'New Chat'
+            pdfFile: null, // This will be updated below
+            title: file ? file.name : 'New Chat'
         };
         setChatSessions(prev => [newChatSession, ...prev]);
         setActiveChatId(newChatId);
@@ -155,7 +156,7 @@ export default function AgriChatPage() {
 
         setChatSessions(prev => prev.map(session =>
             session.id === currentActiveChatId
-                ? { ...session, pdfFile: newPdfFile, title: session.title === 'New Chat' ? file.name : session.title }
+                ? { ...session, pdfFile: newPdfFile, title: session.title === 'New Chat' || !session.pdfFile ? file.name : session.title }
                 : session
         ));
         
@@ -349,9 +350,9 @@ export default function AgriChatPage() {
         </footer>
       </div>
 
-      <div className="hidden md:flex md:w-80 lg:w-96">
+      <aside className="hidden md:flex md:w-80 lg:w-96 bg-muted/20">
           {sidebarContent}
-      </div>
+      </aside>
     </div>
   );
 }

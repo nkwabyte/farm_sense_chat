@@ -74,7 +74,7 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
     }
 
     return (
-        <div className="flex flex-col h-screen p-4 border-l pt-14 bg-muted/20">
+        <div className="flex flex-col h-full p-4 pt-14 border-l">
             <Button variant="outline" onClick={onNewChat} className='w-full'>
                 <PlusCircle className="w-5 h-5 mr-2"/>
                 New Chat
