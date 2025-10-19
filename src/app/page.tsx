@@ -27,6 +27,7 @@ export default function AgriChatPage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
@@ -132,7 +133,7 @@ export default function AgriChatPage() {
     let currentActiveChatId = activeChatId;
 
     // Create a new chat if the current one already has messages, or if no chat exists
-    if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0)) {
+    if (!currentActiveChatId || (activeChat && activeChat.messages.length > 0 && !activeChat.pdfFile)) {
         const newChatId = nanoid();
         const newChatSession: ChatSession = {
             id: newChatId,
@@ -154,7 +155,7 @@ export default function AgriChatPage() {
 
         setChatSessions(prev => prev.map(session =>
             session.id === currentActiveChatId
-                ? { ...session, pdfFile: newPdfFile, title: file.name }
+                ? { ...session, pdfFile: newPdfFile, title: session.title === 'New Chat' ? file.name : session.title }
                 : session
         ));
         
@@ -186,6 +187,8 @@ export default function AgriChatPage() {
   }, [toast, activeChatId, activeChat]);
 
   const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return;
+
     let currentChatId = activeChatId;
     
     // Create new chat if none exists
@@ -212,12 +215,13 @@ export default function AgriChatPage() {
               ...session, 
               messages: [...session.messages, userMessage],
               // Set title from first message
-              title: session.messages.length === 0 ? message.substring(0, 30) + "..." : session.title,
+              title: session.messages.length === 0 && session.title === 'New Chat' ? message.substring(0, 30) + "..." : session.title,
             }
           : session
       )
     );
     setIsLoading(true);
+    setInputValue('');
 
     try {
       // It's important to get the most up-to-date session state
@@ -265,7 +269,6 @@ export default function AgriChatPage() {
       );
     } finally {
       setIsLoading(false);
-      handleRemoveFile();
     }
   };
 
@@ -281,9 +284,14 @@ export default function AgriChatPage() {
   
   const onSelectChat = (id: string) => {
     setActiveChatId(id);
+    setInputValue(''); // Clear input when switching chats
     if (isMobile) {
       setIsSidebarOpen(false);
     }
+  }
+
+  const handleSuggestedQuestion = (question: string) => {
+    setInputValue(question);
   }
 
   const sidebarContent = (
@@ -302,6 +310,10 @@ export default function AgriChatPage() {
       className="flex h-screen bg-background text-foreground"
       style={bgColor ? { backgroundColor: bgColor } : {}}
     >
+      <div className="flex-1 hidden md:flex">
+          {sidebarContent}
+      </div>
+
       <div className="flex flex-1 flex-col overflow-hidden">
         {isMobile && (
           <ChatHeader>
@@ -331,19 +343,16 @@ export default function AgriChatPage() {
               suggestedQuestions={suggestedQuestions}
               activeFile={activeChat?.pdfFile ?? null}
               onRemoveFile={handleRemoveFile}
+              onSuggestedQuestion={handleSuggestedQuestion}
+              inputValue={inputValue}
+              setInputValue={setInputValue}
               key={activeChatId} // Re-mounts the component when chat changes
             />
         </main>
-        <footer className="px-4 py-2 text-[11px] text-center border-t text-muted-foreground">
+        <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
           Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
         </footer>
       </div>
-
-      {!isMobile && (
-        <div className="w-72 flex-shrink-0">
-            {sidebarContent}
-        </div>
-      )}
     </div>
   );
 }
