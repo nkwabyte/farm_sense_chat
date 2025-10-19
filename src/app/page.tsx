@@ -310,10 +310,6 @@ export default function AgriChatPage() {
       className="flex h-screen bg-background text-foreground"
       style={bgColor ? { backgroundColor: bgColor } : {}}
     >
-      <div className="flex-1 hidden md:flex">
-          {sidebarContent}
-      </div>
-
       <div className="flex flex-1 flex-col overflow-hidden">
         {isMobile && (
           <ChatHeader>
@@ -353,6 +349,12 @@ export default function AgriChatPage() {
           Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
         </footer>
       </div>
+
+      <div className="flex-1 hidden md:flex">
+          {sidebarContent}
+      </div>
     </div>
   );
 }
+
+    
