@@ -284,7 +284,6 @@ export default function AgriChatPage() {
   
   const onSelectChat = (id: string) => {
     setActiveChatId(id);
-    setInputValue(''); // Clear input when switching chats
     if (isMobile) {
       setIsSidebarOpen(false);
     }
@@ -310,7 +309,7 @@ export default function AgriChatPage() {
       className="flex h-screen bg-background text-foreground"
       style={bgColor ? { backgroundColor: bgColor } : {}}
     >
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {isMobile && (
           <ChatHeader>
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -350,11 +349,9 @@ export default function AgriChatPage() {
         </footer>
       </div>
 
-      <div className="flex-1 hidden md:flex">
+      <div className="hidden md:flex md:w-80 lg:w-96">
           {sidebarContent}
       </div>
     </div>
   );
 }
-
-    
