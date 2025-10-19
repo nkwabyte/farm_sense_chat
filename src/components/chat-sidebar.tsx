@@ -74,18 +74,18 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
     }
 
     return (
-        <div className="flex flex-col h-full p-4 pt-14 border-l">
+        <div className="flex flex-col h-full p-4 pt-14 border-l bg-muted/40">
             <Button variant="outline" onClick={onNewChat} className='w-full'>
                 <PlusCircle className="w-5 h-5 mr-2"/>
                 New Chat
             </Button>
             <h2 className='mt-6 mb-2 text-sm font-semibold text-muted-foreground'>Your Conversations</h2>
             <ScrollArea className="flex-1 -mx-4">
-                <div className='px-4 space-y-2'>
+                <div className='px-2 space-y-1'>
                     {sessions.map(session => (
                         <div key={session.id} className='relative group'>
                             {renamingId === session.id ? (
-                                <div className="flex items-center gap-2 pr-2">
+                                <div className="flex items-center gap-2 p-2">
                                     <Input
                                         ref={renameInputRef}
                                         value={renameValue}
@@ -94,14 +94,14 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
                                         onBlur={handleConfirmRename}
                                         className="h-9"
                                     />
-                                    <Button size="icon" variant="ghost" className="w-9 h-9" onClick={handleConfirmRename}>
+                                    <Button size="icon" variant="ghost" className="w-9 h-9 shrink-0" onClick={handleConfirmRename}>
                                         <Check className="w-4 h-4" />
                                     </Button>
                                 </div>
                             ) : (
                                 <Button
                                     variant={session.id === activeChatId ? "secondary" : "ghost"}
-                                    className="justify-start w-full h-auto py-2 pl-3 pr-10 text-left"
+                                    className="justify-start w-full h-auto py-2 pl-4 pr-12 text-left rounded-lg"
                                     onClick={() => setActiveChatId(session.id)}
                                 >
                                     <span className='truncate'>{session.title}</span>
@@ -109,7 +109,7 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
                             )}
                             
                             {renamingId !== session.id && (
-                               <div className='absolute flex items-center gap-0.5 -right-0 top-1/2 -translate-y-1/2'>
+                               <div className='absolute flex items-center gap-0.5 right-2 top-1/2 -translate-y-1/2'>
                                     <RenameChatButton onRename={() => handleStartRename(session)} />
                                     <DeleteChatButton onDelete={() => onDeleteChat(session.id)} />
                                </div>
