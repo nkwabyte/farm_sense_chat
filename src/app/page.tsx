@@ -131,15 +131,15 @@ export default function AgriChatPage() {
   
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     let currentActiveChatId = activeChatId;
+    let shouldCreateNewChat = !currentActiveChatId || (activeChat && activeChat.messages.length > 0);
 
-    // Create a new chat if the current one has a file or has messages.
-    if (!currentActiveChatId || (activeChat?.pdfFile && activeChat.messages.length > 0 && !activeChat.pdfFile)) {
+    if (shouldCreateNewChat) {
         const newChatId = nanoid();
         const file = event.target.files?.[0];
         const newChatSession: ChatSession = {
             id: newChatId,
             messages: [],
-            pdfFile: null, // This will be updated below
+            pdfFile: null, 
             title: file ? file.name : 'New Chat'
         };
         setChatSessions(prev => [newChatSession, ...prev]);
@@ -181,7 +181,6 @@ export default function AgriChatPage() {
       });
     }
     
-    // Reset file input to allow uploading the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -192,7 +191,6 @@ export default function AgriChatPage() {
 
     let currentChatId = activeChatId;
     
-    // Create new chat if none exists
     if (!currentChatId) {
       const newChatId = nanoid();
       const newChatSession: ChatSession = {
@@ -209,13 +207,16 @@ export default function AgriChatPage() {
     const userMessageId = nanoid();
     const userMessage: Message = { role: 'user', content: message, id: userMessageId };
 
+    const currentSession = chatSessions.find(s => s.id === currentChatId);
+    const pdfDataUri = currentSession?.pdfFile?.dataUri;
+    const pdfName = currentSession?.pdfFile?.name;
+
     setChatSessions(prev =>
       prev.map(session =>
         session.id === currentChatId
           ? { 
               ...session, 
               messages: [...session.messages, userMessage],
-              // Set title from first message
               title: session.messages.length === 0 && session.title === 'New Chat' ? message.substring(0, 30) + "..." : session.title,
             }
           : session
@@ -225,30 +226,22 @@ export default function AgriChatPage() {
     setInputValue('');
 
     try {
-      // It's important to get the most up-to-date session state
-      const currentSession = await new Promise<ChatSession | undefined>(resolve => {
-        setChatSessions(currentSessions => {
-            resolve(currentSessions.find(s => s.id === currentChatId));
-            return currentSessions;
-        });
-      });
-      
       const response = await answerQuestionsFromPdf({
         question: message,
-        pdfDataUri: currentSession?.pdfFile?.dataUri,
+        pdfDataUri: pdfDataUri,
       });
 
       const aiMessage: Message = {
         role: 'assistant',
         content: response.answer,
-        source: response.source?.replace('ExamplePDF.pdf', currentSession?.pdfFile?.name ?? "General Knowledge"),
+        source: response.source?.replace('ExamplePDF.pdf', pdfName ?? "General Knowledge"),
         id: nanoid(),
       };
       
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
-            ? { ...session, messages: [...session.messages, aiMessage] }
+            ? { ...session, messages: [...session.messages, aiMessage], pdfFile: null } // Clear file after sending
             : session
         )
       );
@@ -260,7 +253,6 @@ export default function AgriChatPage() {
         title: "AI Error",
         description: "Could not get a response from the AI. Please try again.",
       });
-      // Remove the user message if AI fails
       setChatSessions(prev =>
         prev.map(session =>
           session.id === currentChatId
@@ -294,7 +286,7 @@ export default function AgriChatPage() {
     setInputValue(question);
   }
 
-  const sidebarContent = (
+  const sidebar = (
     <ChatSidebar 
       sessions={chatSessions} 
       activeChatId={activeChatId} 
@@ -302,6 +294,23 @@ export default function AgriChatPage() {
       onNewChat={handleNewChat}
       onDeleteChat={handleDeleteChat}
       onRenameChat={handleRenameChat}
+    />
+  );
+
+  const chatInterface = (
+    <ChatInterface
+      messages={activeChat?.messages ?? []}
+      isLoading={isLoading}
+      onSendMessage={handleSendMessage}
+      onFileChange={handleFileChange}
+      fileInputRef={fileInputRef}
+      suggestedQuestions={suggestedQuestions}
+      activeFile={activeChat?.pdfFile ?? null}
+      onRemoveFile={handleRemoveFile}
+      onSuggestedQuestion={handleSuggestedQuestion}
+      inputValue={inputValue}
+      setInputValue={setInputValue}
+      key={activeChatId}
     />
   );
 
@@ -324,55 +333,29 @@ export default function AgriChatPage() {
                         <SheetHeader className="p-4 border-b">
                         <SheetTitle>Conversations</SheetTitle>
                         </SheetHeader>
-                        {sidebarContent}
+                        {sidebar}
                     </SheetContent>
                     </Sheet>
                 </ChatHeader>
                 <main className="flex-1 overflow-hidden">
-                    <ChatInterface
-                    messages={activeChat?.messages ?? []}
-                    isLoading={isLoading}
-                    onSendMessage={handleSendMessage}
-                    onFileChange={handleFileChange}
-                    fileInputRef={fileInputRef}
-                    suggestedQuestions={suggestedQuestions}
-                    activeFile={activeChat?.pdfFile ?? null}
-                    onRemoveFile={handleRemoveFile}
-                    onSuggestedQuestion={handleSuggestedQuestion}
-                    inputValue={inputValue}
-                    setInputValue={setInputValue}
-                    key={activeChatId} // Re-mounts the component when chat changes
-                    />
+                    {chatInterface}
                 </main>
                 <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
                     Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
                 </footer>
              </div>
         ) : (
-            <div className='flex w-full'>
-                <main className="flex-1 flex flex-col overflow-hidden">
+            <div className='flex w-full h-full'>
+                <div className="flex flex-col flex-1 overflow-hidden">
                     <div className='flex-1 overflow-auto'>
-                    <ChatInterface
-                        messages={activeChat?.messages ?? []}
-                        isLoading={isLoading}
-                        onSendMessage={handleSendMessage}
-                        onFileChange={handleFileChange}
-                        fileInputRef={fileInputRef}
-                        suggestedQuestions={suggestedQuestions}
-                        activeFile={activeChat?.pdfFile ?? null}
-                        onRemoveFile={handleRemoveFile}
-                        onSuggestedQuestion={handleSuggestedQuestion}
-                        inputValue={inputValue}
-                        setInputValue={setInputValue}
-                        key={activeChatId} // Re-mounts the component when chat changes
-                    />
+                      {chatInterface}
                     </div>
-                    <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
+                    <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground shrink-0">
                         Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
                     </footer>
-                </main>
-                <aside className="w-80 lg:w-96 bg-muted/20 border-l">
-                    {sidebarContent}
+                </div>
+                <aside className="w-80 lg:w-96 bg-muted/40 border-l">
+                    {sidebar}
                 </aside>
             </div>
         )}
