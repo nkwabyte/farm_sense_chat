@@ -185,7 +185,7 @@ export default function AgriChatPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [toast, activeChatId, activeChat]);
+  }, [toast, activeChatId, activeChat, handleNewChat]);
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -194,16 +194,10 @@ export default function AgriChatPage() {
     
     // Create new chat if none exists
     if (!currentChatId) {
-        const newChatId = nanoid();
-        const newChatSession: ChatSession = {
-            id: newChatId,
-            messages: [],
-            pdfFile: null,
-            title: message.substring(0, 30) + "..."
-        };
-        setChatSessions(prev => [newChatSession, ...prev]);
-        setActiveChatId(newChatId);
-        currentChatId = newChatId;
+      handleNewChat();
+      // We need to get the new chat id, which is not available immediately.
+      // Awaiting state update is tricky. Let's get it from the sessions.
+      currentChatId = chatSessions[0].id;
     }
 
     const userMessageId = nanoid();
@@ -310,49 +304,74 @@ export default function AgriChatPage() {
       className="flex h-screen bg-background text-foreground"
       style={bgColor ? { backgroundColor: bgColor } : {}}
     >
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {isMobile && (
-          <ChatHeader>
-            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <PanelLeft />
-                  <span className="sr-only">Toggle Menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="p-0">
-                <SheetHeader className="p-4 border-b">
-                  <SheetTitle>Conversations</SheetTitle>
-                </SheetHeader>
-                {sidebarContent}
-              </SheetContent>
-            </Sheet>
-          </ChatHeader>
+        {isMobile ? (
+             <div className="flex-1 flex flex-col overflow-hidden">
+                <ChatHeader>
+                    <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                        <PanelLeft />
+                        <span className="sr-only">Toggle Menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-0">
+                        <SheetHeader className="p-4 border-b">
+                        <SheetTitle>Conversations</SheetTitle>
+                        </SheetHeader>
+                        {sidebarContent}
+                    </SheetContent>
+                    </Sheet>
+                </ChatHeader>
+                <main className="flex-1 overflow-hidden">
+                    <ChatInterface
+                    messages={activeChat?.messages ?? []}
+                    isLoading={isLoading}
+                    onSendMessage={handleSendMessage}
+                    onFileChange={handleFileChange}
+                    fileInputRef={fileInputRef}
+                    suggestedQuestions={suggestedQuestions}
+                    activeFile={activeChat?.pdfFile ?? null}
+                    onRemoveFile={handleRemoveFile}
+                    onSuggestedQuestion={handleSuggestedQuestion}
+                    inputValue={inputValue}
+                    setInputValue={setInputValue}
+                    key={activeChatId} // Re-mounts the component when chat changes
+                    />
+                </main>
+                <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
+                    Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+                </footer>
+             </div>
+        ) : (
+            <div className='flex w-full'>
+                <main className="flex-1 overflow-hidden">
+                    <div className='flex flex-col h-full'>
+                        <div className='flex-1 overflow-auto'>
+                        <ChatInterface
+                            messages={activeChat?.messages ?? []}
+                            isLoading={isLoading}
+                            onSendMessage={handleSendMessage}
+                            onFileChange={handleFileChange}
+                            fileInputref={fileInputRef}
+                            suggestedQuestions={suggestedQuestions}
+                            activeFile={activeChat?.pdfFile ?? null}
+                            onRemoveFile={handleRemoveFile}
+                            onSuggestedQuestion={handleSuggestedQuestion}
+                            inputValue={inputValue}
+                            setInputValue={setInputValue}
+                            key={activeChatId} // Re-mounts the component when chat changes
+                        />
+                        </div>
+                        <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
+                            Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
+                        </footer>
+                    </div>
+                </main>
+                <aside className="w-80 lg:w-96 bg-muted/20">
+                    {sidebarContent}
+                </aside>
+            </div>
         )}
-        <main className="flex-1 overflow-hidden">
-            <ChatInterface
-              messages={activeChat?.messages ?? []}
-              isLoading={isLoading}
-              onSendMessage={handleSendMessage}
-              onFileChange={handleFileChange}
-              fileInputRef={fileInputRef}
-              suggestedQuestions={suggestedQuestions}
-              activeFile={activeChat?.pdfFile ?? null}
-              onRemoveFile={handleRemoveFile}
-              onSuggestedQuestion={handleSuggestedQuestion}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              key={activeChatId} // Re-mounts the component when chat changes
-            />
-        </main>
-        <footer className="px-4 py-2 text-[10px] text-center border-t text-muted-foreground">
-          Responses may not be accurate - verify all responses from Pomaa AI before applying any advice
-        </footer>
-      </div>
-
-      <aside className="hidden md:flex md:w-80 lg:w-96 bg-muted/20">
-          {sidebarContent}
-      </aside>
     </div>
   );
 }

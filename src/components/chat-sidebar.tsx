@@ -81,7 +81,7 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
             </Button>
             <h2 className='mt-6 mb-2 text-sm font-semibold text-muted-foreground'>Your Conversations</h2>
             <ScrollArea className="flex-1 -mx-4">
-                <div className='px-2 space-y-1'>
+                <div className='px-4 space-y-1'>
                     {sessions.map(session => (
                         <div key={session.id} className='relative group'>
                             {renamingId === session.id ? (
@@ -101,7 +101,7 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
                             ) : (
                                 <Button
                                     variant={session.id === activeChatId ? "secondary" : "ghost"}
-                                    className="justify-start w-full h-auto py-2 pl-4 pr-12 text-left rounded-lg"
+                                    className="justify-start w-full h-auto py-2 pl-4 pr-12 text-left"
                                     onClick={() => setActiveChatId(session.id)}
                                 >
                                     <span className='truncate'>{session.title}</span>
@@ -116,6 +116,11 @@ export function ChatSidebar({ sessions, activeChatId, setActiveChatId, onNewChat
                             )}
                         </div>
                     ))}
+                     {sessions.length === 0 && (
+                        <div className="text-center text-muted-foreground text-sm mt-4">
+                            No chat history yet.
+                        </div>
+                    )}
                 </div>
             </ScrollArea>
         </div>
